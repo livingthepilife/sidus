@@ -1,0 +1,328 @@
+@font-face {
+  font-family: 'Aleo';
+  src: url('/assets/fonts/Aleo-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aleo';
+  src: url('/assets/fonts/Aleo-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aleo';
+  src: url('/assets/fonts/Aleo-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 263 70% 50%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom cosmic styling */
+.cosmic-bg {
+  background: #000000;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Base star layer - small twinkling stars */
+.cosmic-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(1px 1px at 23px 41px, #ffffff, transparent),
+    radial-gradient(1px 1px at 87px 15px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(0.5px 0.5px at 156px 73px, #ffffff, transparent),
+    radial-gradient(1px 1px at 234px 28px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(0.5px 0.5px at 67px 98px, #ffffff, transparent),
+    radial-gradient(1px 1px at 312px 54px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(0.5px 0.5px at 45px 167px, #ffffff, transparent),
+    radial-gradient(1px 1px at 189px 134px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(0.5px 0.5px at 267px 187px, #ffffff, transparent),
+    radial-gradient(1px 1px at 98px 245px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(0.5px 0.5px at 356px 123px, #ffffff, transparent),
+    radial-gradient(1px 1px at 178px 289px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(0.5px 0.5px at 423px 67px, #ffffff, transparent),
+    radial-gradient(1px 1px at 134px 356px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(0.5px 0.5px at 289px 245px, #ffffff, transparent),
+    radial-gradient(1px 1px at 367px 198px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(0.5px 0.5px at 78px 412px, #ffffff, transparent),
+    radial-gradient(1px 1px at 245px 334px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(0.5px 0.5px at 445px 289px, #ffffff, transparent),
+    radial-gradient(1px 1px at 123px 478px, rgba(255,255,255,0.7), transparent),
+    /* Additional dense stars */
+    radial-gradient(0.5px 0.5px at 12px 234px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 456px 67px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(0.5px 0.5px at 234px 123px, #ffffff, transparent),
+    radial-gradient(1px 1px at 345px 456px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(0.5px 0.5px at 567px 234px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 123px 567px, #ffffff, transparent),
+    radial-gradient(0.5px 0.5px at 678px 345px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 234px 678px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(0.5px 0.5px at 789px 123px, #ffffff, transparent),
+    radial-gradient(1px 1px at 345px 789px, rgba(255,255,255,0.9), transparent);
+  background-repeat: repeat;
+  background-size: 500px 600px;
+  animation: twinkle 25s linear infinite;
+  pointer-events: none;
+}
+
+/* Secondary star layer - larger, brighter stars */
+.cosmic-bg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(1.5px 1.5px at 345px 234px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(2px 2px at 123px 345px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 456px 123px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1.5px 1.5px at 234px 456px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 567px 234px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(2px 2px at 345px 567px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 678px 345px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1.5px 1.5px at 456px 678px, rgba(255,255,255,0.6), transparent),
+    /* Additional bright stars */
+    radial-gradient(2px 2px at 89px 445px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(1.5px 1.5px at 612px 178px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 334px 567px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(2px 2px at 723px 289px, rgba(255,255,255,0.6), transparent);
+  background-repeat: repeat;
+  background-size: 800px 900px;
+  animation: drift 35s linear infinite reverse;
+  pointer-events: none;
+}
+
+@keyframes twinkle {
+  0% { 
+    transform: translateY(0px) translateX(0px);
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  75% {
+    opacity: 0.4;
+  }
+  100% { 
+    transform: translateY(-600px) translateX(-50px);
+    opacity: 1;
+  }
+}
+
+@keyframes drift {
+  0% { 
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% { 
+    transform: translateY(-900px) translateX(100px) rotate(360deg);
+    opacity: 0.8;
+  }
+}
+
+.message-bubble {
+  @apply rounded-2xl px-4 py-3 mb-4 max-w-[80%] animate-fade-in;
+}
+
+.message-bubble.user {
+  @apply bg-purple-600 text-white ml-auto;
+}
+
+.message-bubble.assistant {
+  @apply bg-gray-800 text-gray-100 mr-auto border border-gray-700;
+}
+
+.typing-indicator {
+  @apply flex space-x-1 p-3;
+}
+
+.typing-dot {
+  @apply w-2 h-2 bg-gray-400 rounded-full animate-pulse;
+  animation-delay: var(--delay);
+}
+
+.glow-button {
+  @apply relative overflow-hidden;
+  transition: all 0.3s ease;
+}
+
+.glow-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.glow-button:hover::before {
+  left: 100%;
+}
+
+.star-icon {
+  filter: drop-shadow(0 0 6px rgba(147, 51, 234, 0.6));
+}
+
+/* Soulmate generation animation */
+.divining-animation {
+  @apply relative;
+}
+
+.divining-animation::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  margin: -50px 0 0 -50px;
+  border: 3px solid transparent;
+  border-top: 3px solid #9333ea;
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Enhanced tab navigation styling */
+.nav-icon-active {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+}
+
+.nav-icon-inactive {
+  transition: all 0.3s ease;
+}
+
+.nav-icon-inactive:hover {
+  filter: drop-shadow(0 0 4px rgba(156, 163, 175, 0.3));
+}
+
+/* Custom scrollbar for chat messages */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #6b7280 transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6b7280, #4b5563);
+  border-radius: 3px;
+  border: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9ca3af, #6b7280);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #d1d5db, #9ca3af);
+}
+
+/* Smooth scroll behavior */
+.custom-scrollbar {
+  scroll-behavior: smooth;
+}
+
+/* Chat message animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+} 
+
+/* iOS Picker Scroll Wheels */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scrolling for iOS pickers */
+.picker-scroll {
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+}
+
+.picker-item {
+  scroll-snap-align: center;
+} 
