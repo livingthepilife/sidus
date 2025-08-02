@@ -109,6 +109,7 @@ export default function ChatPage() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -141,6 +142,14 @@ export default function ChatPage() {
       setTimeout(() => scrollToTop(), 100)
     }
   }, [messages.length])
+
+  useEffect(() => {
+    // Auto-resize textarea when input value changes
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px'
+    }
+  }, [inputValue])
 
   useEffect(() => {
     // Load user data
@@ -459,7 +468,14 @@ export default function ChatPage() {
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const target = e.target as HTMLTextAreaElement
+    
+    // Auto-resize textarea
+    target.style.height = 'auto'
+    target.style.height = Math.min(target.scrollHeight, 120) + 'px'
+    
+    // Handle Enter key
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
@@ -520,9 +536,9 @@ export default function ChatPage() {
 
   return (
     <ProtectedRoute>
-      <div className="mobile-vh-fix bg-black text-white mobile-container">
+      <div className="flex flex-col h-screen bg-black text-white">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800 flex-shrink-0 mobile-safe-area">
+        <div className="flex items-center justify-between p-4 border-b border-gray-800 flex-shrink-0">
           <button 
             onClick={() => router.back()}
             className="p-2 hover:bg-gray-800 rounded-lg transition-colors touch-target"
@@ -533,217 +549,212 @@ export default function ChatPage() {
           <div className="w-10" />
         </div>
 
-        {/* Main Content */}
-        <div className="flex flex-col flex-1 mobile-scroll-container">
-          {/* Messages */}
-          <div className="flex-1 mobile-chat-messages">
-            <div className="px-4 py-4 space-y-4 min-h-full mobile-scroll">
-                {messages.map((message) => (
-                  <div key={message.id} className="space-y-2">
-                    {message.role === 'assistant' && (
-                      <div className="flex items-start space-x-2">
-                        <div className="text-sm text-gray-400">Astra:</div>
-                      </div>
-                    )}
-                    {message.role === 'user' && (
-                      <div className="flex items-start space-x-2">
-                        <div className="text-sm text-gray-400">You:</div>
-                      </div>
-                    )}
-                    <div className={`${message.role === 'user' ? 'text-white' : 'text-gray-300'}`}>
-                      {message.role === 'assistant' ? (
-                        <TypingMessage 
-                          content={message.content} 
-                          isTyping={typingMessageId === message.id} 
-                        />
-                      ) : (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {message.content}
-                        </p>
-                      )}
-                      {message.imageUrl && (
-                        <div className="mt-3">
-                          <img 
-                            src={message.imageUrl} 
-                            alt="Generated content" 
-                            className="max-w-full h-auto rounded-lg shadow-lg"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                
-                {isLoading && (
-                  <div className="space-y-2">
-                    <div className="flex items-start space-x-2">
-                      <div className="text-sm text-gray-400">Astra:</div>
-                    </div>
-                    <div className="text-gray-300 flex items-center space-x-2">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                      </div>
-                      <span className="text-sm">Consulting the cosmic forces...</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Soulmate Generation Progress */}
-                {currentStep === 'generating' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="bg-gray-800/50 rounded-lg p-6 space-y-4">
-                      <div className="text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
-                          <Sparkles className="w-8 h-8 text-white animate-pulse" />
-                        </div>
-                        <h3 className="text-lg font-bold text-white mb-2">Manifesting Your Soulmate</h3>
-                        <p className="text-gray-400 text-sm">The universe is aligning the perfect cosmic match for you...</p>
-                      </div>
-                      <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
-                          initial={{ width: "0%" }}
-                          animate={{ width: `${generationProgress}%` }}
-                          transition={{ duration: 0.5 }}
-                        />
-                      </div>
-                      <p className="text-center text-purple-300 text-sm font-medium">
-                        {generationProgress < 30 ? "Consulting the stars..." :
-                         generationProgress < 60 ? "Analyzing cosmic compatibility..." :
-                         generationProgress < 90 ? "Creating your destined match..." :
-                         "Finalizing cosmic blueprint..."}
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Gender Selection */}
-                {currentStep === 'gender' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="text-center mb-4">
-                      <h3 className="text-lg font-bold text-white mb-2">Gender Preference</h3>
-                      <p className="text-gray-400 text-sm">What gender are you interested in?</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      {GENDER_OPTIONS.map((option) => (
-                        <Button
-                          key={option.value}
-                          onClick={() => handleGenderSelection(option.value)}
-                          className="bg-transparent border border-gray-600 text-white hover:bg-gray-800 rounded-lg py-6 text-lg"
-                        >
-                          {option.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Race Selection */}
-                {currentStep === 'race' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="text-center mb-4">
-                      <h3 className="text-lg font-bold text-white mb-2">Ethnic Background</h3>
-                      <p className="text-gray-400 text-sm">What ethnic background(s) attract you? (Select multiple)</p>
-                    </div>
-                    <div className="space-y-3 max-h-80 overflow-y-auto">
-                      {RACE_OPTIONS.map((option, index) => (
-                        <div 
-                          key={option.value} 
-                          className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-all duration-300"
-                        >
-                          <input
-                            type="checkbox"
-                            id={option.value}
-                            checked={racePreference.includes(option.value)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setRacePreference(prev => [...prev, option.value])
-                              } else {
-                                setRacePreference(prev => prev.filter(r => r !== option.value))
-                              }
-                            }}
-                            className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
-                          />
-                          <label htmlFor={option.value} className="text-gray-300 cursor-pointer flex-1">
-                            {option.label}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                    <Button
-                      onClick={handleRaceSelection}
-                      disabled={racePreference.length === 0}
-                      className="w-full bg-white text-black hover:bg-gray-200 rounded-full py-3 text-lg font-semibold disabled:opacity-50"
-                    >
-                      Continue
-                    </Button>
-                  </motion.div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
-
-          {/* Input Area */}
-          {(currentStep === 'chat' || currentStep === 'result') && (
-            <div className="mobile-chat-input border-t border-gray-800 flex-shrink-0">
-              {/* Suggested Responses */}
-              {suggestedResponses.length > 0 && (
-                <div className="mb-3">
-                  <div className="flex flex-wrap gap-2">
-                    {suggestedResponses.map((suggestion, index) => (
-                      <motion.button
-                        key={index}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.1 }}
-                        onClick={() => handleSuggestedResponse(suggestion)}
-                        className="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-purple-500 rounded-full text-sm text-gray-300 hover:text-white transition-all duration-300 touch-target"
-                        disabled={isLoading}
-                      >
-                        {suggestion}
-                      </motion.button>
-                    ))}
-                  </div>
+        {/* Messages Container - Scrollable */}
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {messages.map((message) => (
+            <div key={message.id} className="space-y-2">
+              {message.role === 'assistant' && (
+                <div className="flex items-start space-x-2">
+                  <div className="text-sm text-gray-400">Astra:</div>
                 </div>
               )}
-              
-              <div className="relative">
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
-                  className="w-full bg-gray-800 text-white rounded-full pl-4 pr-12 py-3 border border-gray-700 placeholder-gray-400 focus:border-gray-500 outline-none text-base"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isLoading}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black rounded-full p-2 hover:bg-gray-200 transition-colors disabled:opacity-50 touch-target"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
+              {message.role === 'user' && (
+                <div className="flex items-start space-x-2">
+                  <div className="text-sm text-gray-400">You:</div>
+                </div>
+              )}
+              <div className={`${message.role === 'user' ? 'text-white' : 'text-gray-300'}`}>
+                {message.role === 'assistant' ? (
+                  <TypingMessage 
+                    content={message.content} 
+                    isTyping={typingMessageId === message.id} 
+                  />
+                ) : (
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                )}
+                {message.imageUrl && (
+                  <div className="mt-3">
+                    <img 
+                      src={message.imageUrl} 
+                      alt="Generated content" 
+                      className="max-w-full h-auto rounded-lg shadow-lg"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="space-y-2">
+              <div className="flex items-start space-x-2">
+                <div className="text-sm text-gray-400">Astra:</div>
+              </div>
+              <div className="text-gray-300 flex items-center space-x-2">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+                <span className="text-sm">Consulting the cosmic forces...</span>
               </div>
             </div>
           )}
+
+          {/* Soulmate Generation Progress */}
+          {currentStep === 'generating' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <div className="bg-gray-800/50 rounded-lg p-6 space-y-4">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
+                    <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">Manifesting Your Soulmate</h3>
+                  <p className="text-gray-400 text-sm">The universe is aligning the perfect cosmic match for you...</p>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${generationProgress}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Gender Selection */}
+          {currentStep === 'gender' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-white mb-2">Gender Preference</h3>
+                <p className="text-gray-400 text-sm">What gender are you attracted to?</p>
+              </div>
+              <div className="space-y-3">
+                {GENDER_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handleGenderSelection(option.value)}
+                    className="w-full p-4 text-left bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-purple-500 rounded-lg transition-all duration-300"
+                  >
+                    <div className="text-white font-medium">{option.label}</div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Race Selection */}
+          {currentStep === 'race' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-white mb-2">Ethnic Background</h3>
+                <p className="text-gray-400 text-sm">What ethnic background(s) attract you? (Select multiple)</p>
+              </div>
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {RACE_OPTIONS.map((option, index) => (
+                  <div 
+                    key={option.value} 
+                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-all duration-300"
+                  >
+                    <input
+                      type="checkbox"
+                      id={option.value}
+                      checked={racePreference.includes(option.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setRacePreference(prev => [...prev, option.value])
+                        } else {
+                          setRacePreference(prev => prev.filter(r => r !== option.value))
+                        }
+                      }}
+                      className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
+                    />
+                    <label htmlFor={option.value} className="text-gray-300 cursor-pointer flex-1">
+                      {option.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <Button
+                onClick={handleRaceSelection}
+                disabled={racePreference.length === 0}
+                className="w-full bg-white text-black hover:bg-gray-200 rounded-full py-3 text-lg font-semibold disabled:opacity-50"
+              >
+                Continue
+              </Button>
+            </motion.div>
+          )}
+
+          <div ref={messagesEndRef} />
         </div>
+
+        {/* Input Area - Fixed at Bottom */}
+        {(currentStep === 'chat' || currentStep === 'result') && (
+          <div className="border-t border-gray-800 flex-shrink-0 p-4 bg-black pb-safe">
+            {/* Suggested Responses */}
+            {suggestedResponses.length > 0 && (
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-2">
+                  {suggestedResponses.map((suggestion, index) => (
+                    <motion.button
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                      onClick={() => handleSuggestedResponse(suggestion)}
+                      className="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-purple-500 rounded-full text-sm text-gray-300 hover:text-white transition-all duration-300 touch-target"
+                      disabled={isLoading}
+                    >
+                      {suggestion}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="relative">
+              <textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Type your message..."
+                className="w-full bg-gray-800 text-white rounded-2xl pl-4 pr-12 py-3 border border-gray-700 placeholder-gray-400 focus:border-gray-500 outline-none text-base resize-none min-h-[44px] max-h-[120px] leading-5"
+                disabled={isLoading}
+                rows={1}
+                style={{
+                  height: 'auto',
+                  minHeight: '44px',
+                  maxHeight: '120px'
+                }}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || isLoading}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black rounded-full p-2 hover:bg-gray-200 transition-colors disabled:opacity-50 touch-target"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-      </ProtectedRoute>
+    </ProtectedRoute>
   )
 }

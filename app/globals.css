@@ -418,6 +418,10 @@ body {
     padding: 1rem;
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
   
   /* Improved scroll containers */
   .mobile-scroll-container {
