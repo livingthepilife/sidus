@@ -20,6 +20,10 @@ interface TypingMessageProps {
   content: string
   isTyping: boolean
 }
+interface TypingMessageProps {
+  content: string
+  isTyping: boolean
+}
 
 const TypingMessage: React.FC<TypingMessageProps> = ({ content, isTyping }) => {
   const [displayedContent, setDisplayedContent] = useState('')
@@ -150,63 +154,50 @@ export default function ChatPage() {
     }
   }, [chatType, router])
 
-  const initializeChat = (userData: User, type: string) => {
+  const initializeChat = async (userData: User, type: string) => {
     let welcomeMessage = ''
-    let suggestions: string[] = []
     
     switch (type) {
       case 'general':
         welcomeMessage = `Hey ${userData.name}! I'm so glad you're here. As we talk, I'll keep your chart, the chart of people you share with me, and other important details you mention in mind.\n\nWhat's on your mind?`
-        suggestions = ['What self care should I practice today?', 'Why am I so tired?', 'How can I improve my relationships?']
         break
       case 'horoscope':
         // Generate a personalized horoscope message for their sign
         welcomeMessage = `${userData.zodiacSign}, financial matters require your careful attention today; analyze your budget and make informed decisions. A simple act of kindness can brighten someone's day and create a ripple effect of positivity. Embrace the power of small gestures to make a big difference.`
-        suggestions = ['Who needs kindness?', 'What budget changes?', 'How to start?']
         break
       case 'compatibility':
         welcomeMessage = `Who do you want to check compatibility with?`
-        suggestions = ['Add someone new', 'Tell me about my current partner', 'Check a friend']
         break
       case 'soulmate':
         welcomeMessage = `${userData.name}, the universe is ready to reveal your soulmate! I'll need to know your preferences to divine the perfect cosmic match for you. Are you ready to discover your destined partner?`
-        suggestions = ['Yes, I\'m ready!', 'Tell me more about how this works', 'What do you need to know?']
         break
       case 'friend-compatibility':
         welcomeMessage = `Who do you want to check compatibility with?`
-        suggestions = ['Add someone new', 'Check an existing friend', 'Tell me about someone']
         break
       case 'dream-interpreter':
         welcomeMessage = `Tell me about your dreams and I can help you understand them`
-        suggestions = ['Why do I keep having the same dream', 'How can I interpret my dreams', 'I had a strange dream last night']
         break
       case 'astrological-events':
         welcomeMessage = `Let's talk about the planets`
-        suggestions = ['What do the planet positions mean for me?', 'What astrological events are coming up?', 'How do retrogrades affect me?']
         break
       case 'tarot-interpreter':
         welcomeMessage = `Let's talk tarot...do you have a card in mind or would you like me to pull one for you?`
-        suggestions = ['I have a card', 'Pull a card for me', 'What does a tarot reading mean?']
         break
       case 'personal-growth':
         welcomeMessage = `What do you want to work on?`
-        suggestions = ['How can improve my organization skills?', 'How can I be a better friend?', 'How do I build confidence?']
         break
       default:
         welcomeMessage = `Hello ${userData.name}! How can I guide you today?`
-        suggestions = []
     }
 
     const initialMessage: Message = {
       id: '1',
       role: 'assistant',
       content: welcomeMessage,
-      timestamp: new Date(),
-      suggestedResponses: suggestions
+      timestamp: new Date()
     }
 
     setMessages([initialMessage])
-    setSuggestedResponses(suggestions)
     
     // Trigger typing animation for initial message
     setTypingMessageId('1')
@@ -214,9 +205,48 @@ export default function ChatPage() {
     setTimeout(() => {
       setTypingMessageId(null)
     }, typingDuration)
+
+    // Generate dynamic suggestions
+    // await generateDynamicSuggestions(userData, type)
   }
 
-  const addMessage = (content: string, role: 'user' | 'assistant', imageUrl?: string) => {
+  const generateDynamicSuggestions = async (userData: User, type: string) => {
+    try {
+      const response = await fetch('/api/chat/suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatType: type,
+          userContext: {
+            userId: userData.userId,
+            name: userData.name,
+            zodiacSign: userData.zodiacSign,
+            birthday: userData.birthday,
+            birthLocation: userData.birthLocation
+          },
+          conversationHistory: messages
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success && data.suggestions) {
+        setSuggestedResponses(data.suggestions)
+      }
+    } catch (error) {
+      console.error('Error generating suggestions:', error)
+      // Fallback to default suggestions
+      const fallbackSuggestions = [
+        'How does my chart affect my relationships?',
+        'What should I focus on this week?',
+        'How can I improve my communication?'
+      ]
+      setSuggestedResponses(fallbackSuggestions)
+    }
+  }
+
+  const addMessage = async (content: string, role: 'user' | 'assistant', imageUrl?: string) => {
     const newMessage: Message = {
       id: Date.now().toString(),
       role,
@@ -235,6 +265,11 @@ export default function ChatPage() {
       setTimeout(() => {
         setTypingMessageId(null)
       }, typingDuration)
+
+      // Generate new suggestions after assistant response
+      // if (user) {
+      //   await generateDynamicSuggestions(user, chatType)
+      // }
     }
   }
 
@@ -242,7 +277,7 @@ export default function ChatPage() {
     if (!inputValue.trim() || isLoading) return
 
     const userMessage = inputValue.trim()
-    addMessage(userMessage, 'user')
+    await addMessage(userMessage, 'user')
     setInputValue('')
     setSuggestedResponses([])
     setIsLoading(true)
@@ -252,7 +287,7 @@ export default function ChatPage() {
         // Check if user wants to start soulmate generation
         if (userMessage.toLowerCase().includes('yes') || userMessage.toLowerCase().includes('ready')) {
           setCurrentStep('gender')
-          addMessage("Perfect! First, what gender are you interested in?", 'assistant')
+          await addMessage("Perfect! First, what gender are you interested in?", 'assistant')
         } else {
           // Use regular chat API for soulmate conversations too
           const response = await fetch('/api/chat', {
@@ -269,7 +304,7 @@ export default function ChatPage() {
           
           const data = await response.json()
           if (data.success && data.message) {
-            addMessage(data.message, 'assistant')
+            await addMessage(data.message, 'assistant')
           } else {
             throw new Error(data.error || 'Failed to get response')
           }
@@ -290,32 +325,32 @@ export default function ChatPage() {
         
         const data = await response.json()
         if (data.success && data.message) {
-          addMessage(data.message, 'assistant')
+          await addMessage(data.message, 'assistant')
         } else {
           throw new Error(data.error || 'Failed to get response')
         }
       }
     } catch (error) {
       console.error('Error sending message:', error)
-      addMessage("I'm experiencing cosmic interference. Please try again.", 'assistant')
+      await addMessage("I'm experiencing cosmic interference. Please try again.", 'assistant')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleGenderSelection = (gender: string) => {
+  const handleGenderSelection = async (gender: string) => {
     setGenderPreference(gender)
     setCurrentStep('race')
-    addMessage(gender, 'user')
-    addMessage("Great choice! Now, what ethnic background(s) are you attracted to? You can select multiple options.", 'assistant')
+    await addMessage(gender, 'user')
+    await addMessage("Great choice! Now, what ethnic background(s) are you attracted to? You can select multiple options.", 'assistant')
   }
 
   const handleRaceSelection = async () => {
     if (racePreference.length === 0) return
     
     setCurrentStep('generating')
-    addMessage(racePreference.join(', '), 'user')
-    addMessage("Perfect! Now I'm consulting the cosmic forces to divine your soulmate...", 'assistant')
+    await addMessage(racePreference.join(', '), 'user')
+    await addMessage("Perfect! Now I'm consulting the cosmic forces to divine your soulmate...", 'assistant')
     
     await generateSoulmate()
   }
@@ -367,8 +402,8 @@ export default function ChatPage() {
       
       setCurrentStep('result')
       
-      setTimeout(() => {
-        addMessage(
+      setTimeout(async () => {
+        await addMessage(
           `Behold! The cosmos has revealed your soulmate - a ${soulmateSign} with ${compatibility}% compatibility! ✨`,
           'assistant',
           imageUrl
@@ -377,15 +412,15 @@ export default function ChatPage() {
       
     } catch (error) {
       console.error('Error generating soulmate:', error)
-      addMessage("The cosmic energies are unstable right now. Please try again later.", 'assistant')
+      await addMessage("The cosmic energies are unstable right now. Please try again later.", 'assistant')
       setCurrentStep('chat')
     }
   }
 
-  const handleLearnMore = () => {
+  const handleLearnMore = async () => {
     if (soulmateData) {
-      addMessage("Tell me more about our connection!", 'user')
-      addMessage(soulmateData.analysis, 'assistant')
+      await addMessage("Tell me more about our connection!", 'user')
+      await addMessage(soulmateData.analysis, 'assistant')
     }
   }
 
@@ -393,7 +428,7 @@ export default function ChatPage() {
     if (isLoading) return
     
     setSuggestedResponses([])
-    addMessage(suggestion, 'user')
+    await addMessage(suggestion, 'user')
     setIsLoading(true)
 
     try {
@@ -412,13 +447,13 @@ export default function ChatPage() {
       
       const data = await response.json()
       if (data.success && data.message) {
-        addMessage(data.message, 'assistant')
+        await addMessage(data.message, 'assistant')
       } else {
         throw new Error(data.error || 'Failed to get response')
       }
     } catch (error) {
       console.error('Error sending message:', error)
-      addMessage("I'm experiencing cosmic interference. Please try again.", 'assistant')
+      await addMessage("I'm experiencing cosmic interference. Please try again.", 'assistant')
     } finally {
       setIsLoading(false)
     }
@@ -485,25 +520,24 @@ export default function ChatPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-black text-white">
+      <div className="mobile-vh-fix bg-black text-white mobile-container">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-gray-800 flex-shrink-0 mobile-safe-area">
           <button 
             onClick={() => router.back()}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-800 rounded-lg transition-colors touch-target"
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-xl font-semibold capitalize">{chatType.replace('-', ' ')}</h1>
+          <h1 className="text-lg sm:text-xl font-semibold capitalize truncate px-2">{getChatTitle()}</h1>
           <div className="w-10" />
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-col h-[calc(100vh-73px)]">
+        <div className="flex flex-col flex-1 mobile-scroll-container">
           {/* Messages */}
-          <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full" ref={messagesContainerRef}>
-              <div className="px-4 py-4 space-y-4">
+          <div className="flex-1 mobile-chat-messages">
+            <div className="px-4 py-4 space-y-4 min-h-full mobile-scroll">
                 {messages.map((message) => (
                   <div key={message.id} className="space-y-2">
                     {message.role === 'assistant' && (
@@ -662,12 +696,11 @@ export default function ChatPage() {
 
                 <div ref={messagesEndRef} />
               </div>
-            </ScrollArea>
-          </div>
+            </div>
 
           {/* Input Area */}
           {(currentStep === 'chat' || currentStep === 'result') && (
-            <div className="p-4 border-t border-gray-800">
+            <div className="mobile-chat-input border-t border-gray-800 flex-shrink-0">
               {/* Suggested Responses */}
               {suggestedResponses.length > 0 && (
                 <div className="mb-3">
@@ -678,8 +711,8 @@ export default function ChatPage() {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.1 }}
-                                               onClick={() => handleSuggestedResponse(suggestion)}
-                        className="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-purple-500 rounded-full text-sm text-gray-300 hover:text-white transition-all duration-300"
+                        onClick={() => handleSuggestedResponse(suggestion)}
+                        className="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-purple-500 rounded-full text-sm text-gray-300 hover:text-white transition-all duration-300 touch-target"
                         disabled={isLoading}
                       >
                         {suggestion}
@@ -696,13 +729,13 @@ export default function ChatPage() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Type your message..."
-                  className="w-full bg-gray-800 text-white rounded-full pl-4 pr-12 py-3 border border-gray-700 placeholder-gray-400 focus:border-gray-500 outline-none"
+                  className="w-full bg-gray-800 text-white rounded-full pl-4 pr-12 py-3 border border-gray-700 placeholder-gray-400 focus:border-gray-500 outline-none text-base"
                   disabled={isLoading}
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isLoading}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black rounded-full p-2 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black rounded-full p-2 hover:bg-gray-200 transition-colors disabled:opacity-50 touch-target"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -711,6 +744,6 @@ export default function ChatPage() {
           )}
         </div>
       </div>
-    </ProtectedRoute>
+      </ProtectedRoute>
   )
-  } 
+}

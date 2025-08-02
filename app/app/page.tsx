@@ -68,19 +68,19 @@ function PersonCard({ person }: { person: Person }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="bg-gradient-to-r from-gray-800/40 to-gray-700/40 rounded-2xl p-4 border border-gray-700/50 shadow-lg"
+      className="bg-gradient-to-r from-gray-800/40 to-gray-700/40 rounded-2xl p-3 sm:p-4 border border-gray-700/50 shadow-lg"
     >
-      <div className="flex items-center space-x-4">
-        <div className={`w-12 h-12 bg-gradient-to-r ${getRelationshipColor(person.personal_info.relationship_type)} rounded-2xl flex items-center justify-center shadow-lg`}>
-          <span className="text-white font-bold text-lg">
+      <div className="flex items-center space-x-3 sm:space-x-4">
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${getRelationshipColor(person.personal_info.relationship_type)} rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
+          <span className="text-white font-bold text-sm sm:text-lg">
             {person.personal_info.name.charAt(0).toUpperCase()}
           </span>
         </div>
-        <div className="flex-1">
-          <div className="flex items-center space-x-2">
-            <h3 className="font-semibold text-white text-base">{person.personal_info.name}</h3>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-2 flex-wrap">
+            <h3 className="font-semibold text-white text-sm sm:text-base truncate">{person.personal_info.name}</h3>
             {person.personal_info.relationship_type && (
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 flex-shrink-0">
                 {getRelationshipIcon(person.personal_info.relationship_type)}
                 <span className="text-xs text-gray-400 capitalize">
                   {person.personal_info.relationship_type.replace('_', ' ')}
@@ -114,7 +114,7 @@ function PersonCard({ person }: { person: Person }) {
           {/* Birth info */}
           {person.personal_info.birth_date && (
             <div className="mt-1">
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 line-clamp-1">
                 {new Date(person.personal_info.birth_date).toLocaleDateString()}
                 {person.personal_info.birth_location && ` • ${person.personal_info.birth_location}`}
               </span>
@@ -324,41 +324,41 @@ export default function MainApp() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen flex flex-col">
+      <div className="mobile-vh-fix flex flex-col mobile-container">
       {/* Header */}
-      <div className="w-full border-b border-gray-800/50 p-6 flex-shrink-0">
+      <div className="w-full border-b border-gray-800/50 p-4 sm:p-6 flex-shrink-0 mobile-safe-area">
         <div className="w-full max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
             <motion.div
               animate={{ scale: [1, 1.02, 1] }}
               transition={{ duration: 3, repeat: Infinity }}
-              className="relative"
+              className="relative flex-shrink-0"
             >
               <img 
                 src="/assets/images/sidus_logo.png" 
                 alt="Sidus" 
-                className="h-8 w-auto filter drop-shadow-lg"
+                className="h-6 sm:h-8 w-auto filter drop-shadow-lg"
               />
             </motion.div>
-            <div>
-              <p className="text-sm text-gray-400">Welcome back, {user.name}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-400 truncate">Welcome back, {user.name}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-4 flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push('/app/history')}
-              className="text-gray-300 hover:text-white hover:bg-gray-800"
+              className="text-gray-300 hover:text-white hover:bg-gray-800 p-2 sm:px-3 touch-target"
             >
-              <Clock className="w-4 h-4 mr-2" />
-              History
+              <Clock className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">History</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push('/app/settings')}
-              className="text-gray-300 hover:text-white hover:bg-gray-800"
+              className="text-gray-300 hover:text-white hover:bg-gray-800 p-2 touch-target"
             >
               <MoreVertical className="w-4 h-4" />
             </Button>
@@ -366,45 +366,45 @@ export default function MainApp() {
               variant="ghost"
               size="sm"
               onClick={handleSignOut}
-              className="text-gray-300 hover:text-white hover:bg-gray-800"
+              className="text-gray-300 hover:text-white hover:bg-gray-800 p-2 sm:px-3 touch-target"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              <LogOut className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </div>
 
       <div className="w-full max-w-6xl mx-auto flex-1 flex flex-col min-h-0">
-        <div className="max-w-md mx-auto flex-1 flex flex-col">
+        <div className="max-w-full sm:max-w-md mx-auto flex-1 flex flex-col px-4 sm:px-0">
           {/* Tab Navigation */}
-          <div className="flex justify-center items-center space-x-12 mx-4 mt-6 mb-6 flex-shrink-0">
+          <div className="flex justify-center items-center space-x-12 mt-6 mb-6 flex-shrink-0">
             <button
               onClick={() => setActiveTab('chat')}
-              className={`p-4 rounded-full transition-all duration-300 ${
+              className={`p-4 rounded-full transition-all duration-300 touch-target ${
                 activeTab === 'chat' 
                   ? 'text-white nav-icon-active' 
                   : 'text-gray-500 hover:text-gray-300 nav-icon-inactive'
               }`}
             >
-              <MessageCircle className="w-7 h-7" />
+              <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7" />
             </button>
             <button
               onClick={() => setActiveTab('people')}
-              className={`p-4 rounded-full transition-all duration-300 ${
+              className={`p-4 rounded-full transition-all duration-300 touch-target ${
                 activeTab === 'people' 
                   ? 'text-white nav-icon-active' 
                   : 'text-gray-500 hover:text-gray-300 nav-icon-inactive'
               }`}
             >
-              <Users className="w-7 h-7" />
+              <Users className="w-6 h-6 sm:w-7 sm:h-7" />
             </button>
           </div>
 
           {/* Chat Tab Content */}
           {activeTab === 'chat' && (
             <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto px-4 pb-4">
+              <div className="flex-1 mobile-scroll overflow-y-auto pb-4 mobile-safe-area">
                 <div className="space-y-3 mt-4">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -421,19 +421,19 @@ export default function MainApp() {
                         >
                           <Button
                             variant="ghost"
-                            className="w-full h-auto p-5 text-left justify-start hover:bg-gray-800/30 border border-gray-800/50 hover:border-purple-500/30 transition-all duration-300 rounded-2xl group"
+                            className="w-full h-auto p-4 sm:p-5 text-left justify-start hover:bg-gray-800/30 border border-gray-800/50 hover:border-purple-500/30 transition-all duration-300 rounded-2xl group touch-target"
                             onClick={() => handleChatFeatureClick(feature.chatType)}
                           >
-                            <div className="flex items-center space-x-4 w-full">
-                              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-r ${feature.gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300`}>
+                            <div className="flex items-center space-x-3 sm:space-x-4 w-full">
+                              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-r ${feature.gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 flex-shrink-0`}>
                                 {feature.icon}
                               </div>
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-white text-base group-hover:text-purple-200 transition-colors duration-300">{feature.title}</h3>
-                                <p className="text-sm text-gray-400 mt-1 group-hover:text-gray-300 transition-colors duration-300">{feature.description}</p>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-white text-sm sm:text-base group-hover:text-purple-200 transition-colors duration-300 truncate">{feature.title}</h3>
+                                <p className="text-xs sm:text-sm text-gray-400 mt-1 group-hover:text-gray-300 transition-colors duration-300 line-clamp-2">{feature.description}</p>
                               </div>
-                              <div className="text-gray-500 group-hover:text-purple-400 transition-colors duration-300">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="text-gray-500 group-hover:text-purple-400 transition-colors duration-300 flex-shrink-0">
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                               </div>
@@ -451,10 +451,10 @@ export default function MainApp() {
           {/* People Tab Content */}
           {activeTab === 'people' && (
             <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto px-4 pb-4">
+              <div className="flex-1 mobile-scroll overflow-y-auto pb-4 mobile-safe-area">
                 <div className="space-y-4 mt-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-white">
+                    <h2 className="text-base sm:text-lg font-semibold text-white">
                       People in your life
                     </h2>
                   </div>
@@ -466,16 +466,16 @@ export default function MainApp() {
                   >
                     <Button
                       variant="outline"
-                      className="w-full h-18 border-dashed border-gray-600/50 hover:border-purple-500/50 bg-transparent hover:bg-gray-800/20 rounded-2xl group transition-all duration-300"
+                      className="w-full h-auto border-dashed border-gray-600/50 hover:border-purple-500/50 bg-transparent hover:bg-gray-800/20 rounded-2xl group transition-all duration-300 touch-target"
                       onClick={handleNewPersonClick}
                     >
-                      <div className="flex items-center space-x-4 py-2">
-                        <div className="w-12 h-12 rounded-2xl border-2 border-gray-600 group-hover:border-purple-400 flex items-center justify-center transition-all duration-300">
-                          <Plus className="w-6 h-6 text-gray-400 group-hover:text-purple-300 transition-colors duration-300" />
+                      <div className="flex items-center space-x-3 sm:space-x-4 py-3 sm:py-2">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-gray-600 group-hover:border-purple-400 flex items-center justify-center transition-all duration-300 flex-shrink-0">
+                          <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-purple-300 transition-colors duration-300" />
                         </div>
-                        <div className="text-left">
-                          <p className="font-semibold text-gray-300 group-hover:text-white transition-colors duration-300">New Person</p>
-                          <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors duration-300">Add someone to analyze</p>
+                        <div className="text-left min-w-0">
+                          <p className="font-semibold text-gray-300 group-hover:text-white transition-colors duration-300 text-sm sm:text-base">New Person</p>
+                          <p className="text-xs sm:text-sm text-gray-500 group-hover:text-gray-400 transition-colors duration-300">Add someone to analyze</p>
                         </div>
                       </div>
                     </Button>

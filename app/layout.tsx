@@ -5,7 +5,9 @@ import { AuthProvider } from '@/lib/auth-context'
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover'
 }
 
 export const metadata: Metadata = {
@@ -67,9 +69,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className="font-aleo cosmic-bg min-h-screen">
+      <body className="font-aleo cosmic-bg min-h-screen overflow-x-hidden">
         <AuthProvider>
-          <div className="relative z-10">
+          <div className="relative z-10 w-full max-w-full">
             {children}
           </div>
         </AuthProvider>

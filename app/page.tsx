@@ -29,40 +29,40 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="mobile-vh-fix mobile-container">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-xl border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-xl border-b border-gray-800/50 mobile-safe-area">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3 flex-shrink-0">
             <img 
               src="/assets/images/sidus_logo.png" 
               alt="Sidus" 
-              className="h-8 w-auto filter drop-shadow-lg"
+              className="h-6 sm:h-8 w-auto filter drop-shadow-lg"
             />
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             {loading ? (
-              <div className="w-8 h-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent"></div>
+              <div className="w-6 h-6 sm:w-8 sm:h-8 animate-spin rounded-full border-2 border-purple-600 border-t-transparent"></div>
             ) : user ? (
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-300 text-sm">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <span className="text-gray-300 text-xs sm:text-sm hidden sm:block truncate">
                   Welcome back, {user.email?.split('@')[0]}
                 </span>
                 <Button
                   onClick={() => router.push('/app')}
                   variant="ghost"
                   size="sm"
-                  className="text-gray-300 hover:text-white"
+                  className="text-gray-300 hover:text-white p-2 sm:px-3 touch-target"
                 >
-                  <User className="w-4 h-4 mr-2" />
-                  Dashboard
+                  <User className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Dashboard</span>
                 </Button>
                 <Button
                   onClick={() => router.push('/app/settings')}
                   variant="ghost"
                   size="sm"
-                  className="text-gray-300 hover:text-white"
+                  className="text-gray-300 hover:text-white p-2 touch-target"
                 >
                   <Settings className="w-4 h-4" />
                 </Button>
@@ -70,20 +70,20 @@ export default function LandingPage() {
                   onClick={handleSignOut}
                   variant="ghost"
                   size="sm"
-                  className="text-gray-300 hover:text-white"
+                  className="text-gray-300 hover:text-white p-2 touch-target"
                 >
                   <LogOut className="w-4 h-4" />
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
                 <Link href="/auth/login">
-                  <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white">
+                  <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white text-sm touch-target">
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/auth/signup">
-                  <Button size="sm" className="bg-white hover:bg-gray-100 text-black">
+                  <Button size="sm" className="bg-white hover:bg-gray-100 text-black text-sm touch-target">
                     Sign Up
                   </Button>
                 </Link>
@@ -94,59 +94,59 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative pt-24">
-        <div className="max-w-4xl w-full text-center space-y-8">
+      <section className="mobile-vh-fix flex flex-col items-center justify-center px-4 py-8 relative pt-20 sm:pt-24">
+        <div className="max-w-4xl w-full text-center space-y-6 sm:space-y-8">
           
           {/* Logo and Title */}
           <motion.div 
-            className="space-y-6"
+            className="space-y-4 sm:space-y-6"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="flex items-center justify-center mb-6">
+            <div className="flex items-center justify-center mb-4 sm:mb-6">
               <img 
                 src="/assets/images/sidus_logo.png" 
                 alt="Sidus" 
-                className="h-12 w-auto filter drop-shadow-lg"
+                className="h-10 sm:h-12 w-auto filter drop-shadow-lg"
               />
             </div>
             
-            <div className="text-sm text-gray-400 uppercase tracking-widest mb-4">
+            <div className="text-xs sm:text-sm text-gray-400 uppercase tracking-widest mb-4">
               Your Astrology Companion and Soulmate Guide
             </div>
           </motion.div>
 
           {/* Main Heading */}
           <motion.div
-            className="space-y-6"
+            className="space-y-4 sm:space-y-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
-            <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-white leading-tight">
               The universe is listening.
               <br />
               <span className="text-gray-300">Ask away</span>
             </h1>
             
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-4">
               The Sidus app knows the whispers of the cosmos.
-              <br />
-              Whatever's on your mind, just ask.
+              <br className="hidden sm:block" />
+              <span className="sm:hidden"> </span>Whatever's on your mind, just ask.
             </p>
           </motion.div>
 
           {/* CTA Button */}
           <motion.div
-            className="pt-8"
+            className="pt-6 sm:pt-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             <Button
               onClick={handleGetStarted}
-              className="bg-white text-black hover:bg-gray-200 px-8 py-4 text-lg font-semibold rounded-lg transition-all duration-300 transform hover:scale-105"
+              className="bg-white text-black hover:bg-gray-200 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 touch-target"
             >
               {user ? 'Enter Dashboard' : 'Begin Your Journey'}
             </Button>

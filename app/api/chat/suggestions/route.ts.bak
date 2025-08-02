@@ -1,0 +1,185 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import OpenAI from 'openai'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+const supabaseKey = supabaseServiceKey && supabaseServiceKey !== 'your_service_role_key_here' 
+  ? supabaseServiceKey 
+  : supabaseAnonKey
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+const getOpenAI = () => {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY environment variable is not set');
+  }
+  
+  return new OpenAI({
+    apiKey: apiKey,
+  });
+};
+
+export async function POST(request: NextRequest) {
+  try {
+    const { chatType, userContext, conversationHistory } = await request.json()
+
+    if (!userContext || !userContext.userId) {
+      return NextResponse.json(
+        { error: 'User context is required' },
+        { status: 400 }
+      )
+    }
+
+    // Fetch user's people data
+    const { data: peopleData, error: peopleError } = await supabase
+      .from('people')
+      .select('*')
+      .eq('user_id', userContext.userId)
+      .order('created_at', { ascending: false })
+
+    if (peopleError) {
+      console.error('Error fetching people:', peopleError)
+    }
+
+    // Build context about the user's people
+    let peopleContext = ''
+    if (peopleData && peopleData.length > 0) {
+      peopleContext = '\n\nPeople in your life:\n'
+      peopleData.forEach((person, index) => {
+        const personalInfo = person.personal_info || {}
+        const astroInfo = person.astrological_info || {}
+        peopleContext += `${index + 1}. ${personalInfo.name || 'Unknown'}`
+        if (personalInfo.relationship_type) {
+          peopleContext += ` (${personalInfo.relationship_type})`
+        }
+        if (astroInfo.sun_sign) {
+          peopleContext += ` - ${astroInfo.sun_sign}`
+        }
+        if (personalInfo.birth_date) {
+          peopleContext += ` - Born: ${personalInfo.birth_date}`
+        }
+        peopleContext += '\n'
+      })
+    }
+
+    // Create dynamic suggestion prompt based on chat type
+    let suggestionPrompt = ''
+    switch (chatType) {
+      case 'general':
+        suggestionPrompt = `Generate 3 different, engaging conversation starters for an astrological chat. The user is ${userContext.name}, a ${userContext.zodiacSign} born on ${userContext.birthday} in ${userContext.birthLocation}.${peopleContext}
+
+Consider their astrological profile and the people in their life. Make suggestions that are:
+- Personal and relevant to their chart
+- Engaging and conversation-starting
+- Different from typical generic questions
+- Specific to their situation and relationships
+
+Return only the 3 suggestions, one per line, without numbering or formatting.`
+        break
+      case 'horoscope':
+        suggestionPrompt = `Generate 3 different daily horoscope follow-up questions for ${userContext.name}, a ${userContext.zodiacSign}.${peopleContext}
+
+Make suggestions that:
+- Build on their daily horoscope
+- Are specific to their sign's current influences
+- Relate to their relationships and life circumstances
+- Encourage deeper reflection and action
+
+Return only the 3 suggestions, one per line, without numbering or formatting.`
+        break
+      case 'compatibility':
+        suggestionPrompt = `Generate 3 different romantic compatibility questions for ${userContext.name}, a ${userContext.zodiacSign}.${peopleContext}
+
+Make suggestions that:
+- Explore their romantic relationships
+- Consider their astrological compatibility
+- Relate to specific people in their life
+- Help them understand relationship dynamics
+
+Return only the 3 suggestions, one per line, without numbering or formatting.`
+        break
+      case 'personal-growth':
+        suggestionPrompt = `Generate 3 different personal growth questions for ${userContext.name}, a ${userContext.zodiacSign}.${peopleContext}
+
+Make suggestions that:
+- Focus on their personal development
+- Leverage their astrological strengths
+- Address areas for improvement
+- Connect to their relationships and life goals
+
+Return only the 3 suggestions, one per line, without numbering or formatting.`
+        break
+      default:
+        suggestionPrompt = `Generate 3 different engaging questions for ${userContext.name}, a ${userContext.zodiacSign}.${peopleContext}
+
+Make suggestions that are:
+- Relevant to their astrological profile
+- Personal and meaningful
+- Engaging and conversation-starting
+- Different from typical questions
+
+Return only the 3 suggestions, one per line, without numbering or formatting.`
+    }
+
+    const completion = await getOpenAI().chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { 
+          role: "system", 
+          content: "You are Sidus, a mystical astrological guide. Generate engaging, personalized conversation starters that are relevant to the user's astrological profile and life circumstances. Be creative and avoid generic questions." 
+        },
+        { role: "user", content: suggestionPrompt }
+      ],
+      temperature: 0.9,
+      max_tokens: 200,
+    });
+
+    const response = completion.choices[0]?.message?.content || ''
+    const suggestions = response.split('\n').filter(s => s.trim()).slice(0, 3)
+
+    // Fallback suggestions if AI fails
+    const fallbackSuggestions = {
+      general: [
+        'How does my chart affect my relationships?',
+        'What should I focus on this week?',
+        'How can I improve my communication?'
+      ],
+      horoscope: [
+        'What does this mean for my career?',
+        'How will this affect my relationships?',
+        'What should I be careful about?'
+      ],
+      compatibility: [
+        'Tell me about my current partner',
+        'What signs am I most compatible with?',
+        'How can I improve my relationships?'
+      ],
+      'personal-growth': [
+        'How can I build confidence?',
+        'What are my biggest strengths?',
+        'How can I overcome challenges?'
+      ]
+    }
+
+    const finalSuggestions = suggestions.length >= 3 
+      ? suggestions 
+      : fallbackSuggestions[chatType as keyof typeof fallbackSuggestions] || fallbackSuggestions.general
+
+    return NextResponse.json({ 
+      suggestions: finalSuggestions,
+      success: true 
+    })
+
+  } catch (error) {
+    console.error('Suggestions API error:', error)
+    return NextResponse.json(
+      { error: 'Failed to generate suggestions' },
+      { status: 500 }
+    )
+  }
+} 
