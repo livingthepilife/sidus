@@ -26,29 +26,44 @@ export default function SoulmateGenerationPage() {
   const [soulmateData, setSoulmateData] = useState<SoulmateData | null>(null)
   const [isGenerating, setIsGenerating] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [hasGenerated, setHasGenerated] = useState(false)
 
   useEffect(() => {
-    if (genderPreference && ethnicityPreference) {
+    if (genderPreference && ethnicityPreference && !hasGenerated) {
+      setHasGenerated(true)
       generateSoulmate()
     }
-  }, [genderPreference, ethnicityPreference])
+  }, [genderPreference, ethnicityPreference, hasGenerated])
 
   const generateSoulmate = async () => {
+    // Prevent multiple simultaneous generations
+    if (isGenerating) {
+      return
+    }
+    
     try {
       setIsGenerating(true)
       setError(null)
       setGenerationProgress(0)
       
-      // Progress animation
+      // Progress animation - more realistic timing
       const progressInterval = setInterval(() => {
         setGenerationProgress(prev => {
           if (prev >= 95) {
             clearInterval(progressInterval)
             return 95
           }
-          return prev + Math.random() * 15
+          // Slower, more realistic progress
+          return prev + Math.random() * 8 + 2
         })
-      }, 500)
+      }, 800)
+
+      // Get user data from localStorage
+      const userData = localStorage.getItem('sidusUser')
+      if (!userData) {
+        throw new Error('User data not found')
+      }
+      const user = JSON.parse(userData)
 
       // Call soulmate API to generate everything
       const response = await fetch('/api/soulmate', {
@@ -59,7 +74,8 @@ export default function SoulmateGenerationPage() {
         body: JSON.stringify({
           genderPreference,
           racePreference: ethnicityPreference.split(','),
-          userSign: localStorage.getItem('sidusUser') ? JSON.parse(localStorage.getItem('sidusUser')!).zodiacSign : 'Aquarius'
+          userSign: user.zodiacSign,
+          userId: user.userId
         })
       })
 
@@ -68,10 +84,9 @@ export default function SoulmateGenerationPage() {
         throw new Error(data.error || 'Failed to generate soulmate')
       }
 
-      const { imageUrl, soulmateSign, compatibilityScore, analysis, sunSign, moonSign, risingSign } = data.data
+      const { imageUrl, soulmateSign, compatibilityScore, analysis, sunSign, moonSign, risingSign, shortDescription } = data.data
 
       clearInterval(progressInterval)
-      setGenerationProgress(100)
       
       setSoulmateData({
         imageUrl,
@@ -85,10 +100,14 @@ export default function SoulmateGenerationPage() {
       
       setIsGenerating(false)
       
-      // Navigate to results page after a short delay
+      // Show completion message briefly before redirecting
       setTimeout(() => {
-        router.push(`/app/soulmate/result?imageUrl=${encodeURIComponent(imageUrl)}&compatibility=${compatibilityScore}&soulmateSign=${encodeURIComponent(soulmateSign)}&analysis=${encodeURIComponent(analysis)}&sunSign=${encodeURIComponent(sunSign)}&moonSign=${encodeURIComponent(moonSign)}&risingSign=${encodeURIComponent(risingSign)}`)
-      }, 2000)
+        setGenerationProgress(100)
+        // Navigate to results page after showing completion message
+        setTimeout(() => {
+          router.push(`/app/soulmate/result?imageUrl=${encodeURIComponent(imageUrl)}&compatibility=${compatibilityScore}&soulmateSign=${encodeURIComponent(soulmateSign)}&analysis=${encodeURIComponent(analysis)}&sunSign=${encodeURIComponent(sunSign)}&moonSign=${encodeURIComponent(moonSign)}&risingSign=${encodeURIComponent(risingSign)}&shortDescription=${encodeURIComponent(shortDescription)}`)
+        }, 1500) // Show completion message for 1.5 seconds
+      }, 500) // Brief pause before showing completion
       
     } catch (error) {
       console.error('Error generating soulmate:', error)
@@ -203,7 +222,7 @@ export default function SoulmateGenerationPage() {
 
               {/* Status Messages */}
               <div className="space-y-2">
-                {generationProgress < 30 && (
+                {generationProgress < 20 && (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -212,7 +231,7 @@ export default function SoulmateGenerationPage() {
                     Consulting the cosmic forces...
                   </motion.p>
                 )}
-                {generationProgress >= 30 && generationProgress < 60 && (
+                {generationProgress >= 20 && generationProgress < 40 && (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -221,7 +240,16 @@ export default function SoulmateGenerationPage() {
                     Analyzing astrological compatibility...
                   </motion.p>
                 )}
-                {generationProgress >= 60 && generationProgress < 90 && (
+                {generationProgress >= 40 && generationProgress < 60 && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-purple-400 text-sm"
+                  >
+                    Calculating cosmic connections...
+                  </motion.p>
+                )}
+                {generationProgress >= 60 && generationProgress < 80 && (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -230,11 +258,29 @@ export default function SoulmateGenerationPage() {
                     Manifesting your soulmate's image...
                   </motion.p>
                 )}
-                {generationProgress >= 90 && (
+                {generationProgress >= 80 && generationProgress < 95 && (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-green-400 text-sm"
+                    className="text-purple-400 text-sm"
+                  >
+                    Finalizing your cosmic match...
+                  </motion.p>
+                )}
+                {generationProgress >= 95 && generationProgress < 100 && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-purple-400 text-sm"
+                  >
+                    Preparing your soulmate's reveal...
+                  </motion.p>
+                )}
+                {generationProgress === 100 && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-green-400 text-sm font-semibold"
                   >
                     Your soulmate has been revealed! ✨
                   </motion.p>

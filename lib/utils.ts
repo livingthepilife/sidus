@@ -188,11 +188,28 @@ export function generateSoulmatePrompt(
   genderPreference: string, 
   racePreferences: string[]
 ): string {
-  const raceDescriptor = racePreferences.length > 0 
-    ? racePreferences.join(' and ') 
+  const gender = genderPreference === 'male' ? 'man' : genderPreference === 'female' ? 'woman' : 'person'
+  const ethnicity = racePreferences.length > 0 
+    ? racePreferences.join(', ') 
     : 'diverse';
     
-  return `Create a detailed sketch portrait of a ${genderPreference} person of ${raceDescriptor} ethnicity who would be astrologically compatible with a ${userSign}. The person should have kind, intelligent eyes and an approachable, warm expression. Draw them in a realistic portrait style with soft shading, showing someone who embodies the complementary qualities that would harmonize perfectly with a ${userSign} personality. The portrait should be a pencil sketch style with detailed facial features, expressing wisdom, compassion, and the specific traits that would create a deep cosmic connection with ${userSign}.`;
+  return `Create a simple, elegant pencil sketch portrait of a ${gender} who would be the perfect soulmate for a ${userSign}. The person should be ${ethnicity} ethnicity. 
+
+CRITICAL REQUIREMENTS:
+- The face must be perfectly centered in the frame
+- Focus primarily on the face and head, minimal body/shoulders
+- Use a clean, simple pencil sketch style with subtle shading
+- Show a warm, approachable, slightly smiling expression
+- Keep the background completely plain and minimal
+- Use consistent, artistic pencil strokes
+- The drawing should be high quality but not overly detailed
+- Maintain a consistent style that would look good in a mobile app
+- The face should take up approximately 60-70% of the frame
+- Use natural, realistic proportions
+- Avoid any text, symbols, or decorative elements
+- The style should be similar to a professional portrait sketch
+
+The result should be a clean, centered face drawing that looks like it belongs in an astrology app.`;
 } 
 
 // Smart input formatting utilities

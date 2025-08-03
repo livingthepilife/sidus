@@ -208,7 +208,7 @@ export default function SoulmateResultPage() {
             className="text-center max-w-md mx-auto"
           >
             <p className="text-gray-300 leading-relaxed text-sm">
-              {shortDescription || generateShortCompatibilityDescription()}
+              {shortDescription ? decodeURIComponent(shortDescription) : generateShortCompatibilityDescription()}
             </p>
           </motion.div>
         </div>

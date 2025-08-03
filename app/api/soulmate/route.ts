@@ -2,24 +2,66 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateSoulmateImage, generateCompatibilityAnalysis } from '@/lib/openai'
 import { getCompatibilityScore, generateSoulmatePrompt } from '@/lib/utils'
 import { ZodiacSign } from '@/types'
+import { uploadImageToR2, generateSoulmateImageFileName } from '@/lib/r2-upload'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+if (!supabaseUrl) {
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
+}
+
+// Use service role key if available, otherwise fall back to anon key
+const supabaseKey = supabaseServiceKey && supabaseServiceKey !== 'your_service_role_key_here' 
+  ? supabaseServiceKey 
+  : supabaseAnonKey
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// If using anon key, we need to temporarily disable RLS for this to work
+const isUsingServiceRole = supabaseServiceKey && supabaseServiceKey !== 'your_service_role_key_here'
 
 export async function POST(request: NextRequest) {
   try {
     console.log('Soulmate API called')
     
+    // Get parameters from request body
     const { 
       userSign, 
       genderPreference, 
-      racePreference 
+      racePreference,
+      userId
     } = await request.json()
 
-    console.log('Received parameters:', { userSign, genderPreference, racePreference })
+    console.log('Received parameters:', { userSign, genderPreference, racePreference, userId })
 
-    if (!userSign || !genderPreference || !racePreference) {
+    if (!userSign || !genderPreference || !racePreference || !userId) {
       console.log('Missing required parameters')
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400 }
+      )
+    }
+
+    console.log('Using service role key:', isUsingServiceRole)
+
+    // Check if user already has a recent soulmate (within last 30 seconds) to prevent duplicates
+    const { data: recentSoulmate, error: checkError } = await supabase
+      .from('soulmates')
+      .select('id, created_at')
+      .eq('user_id', userId)
+      .gte('created_at', new Date(Date.now() - 30000).toISOString()) // Last 30 seconds
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (recentSoulmate && !checkError) {
+      console.log('Recent soulmate found, preventing duplicate generation')
+      return NextResponse.json(
+        { error: 'Soulmate generation already in progress' },
+        { status: 429 }
       )
     }
 
@@ -43,8 +85,14 @@ export async function POST(request: NextRequest) {
 
     // Generate the image
     console.log('Generating image...')
-    const imageUrl = await generateSoulmateImage(prompt)
-    console.log('Image generated:', imageUrl)
+    const openaiImageUrl = await generateSoulmateImage(prompt)
+    console.log('Image generated:', openaiImageUrl)
+
+    // Upload image to R2 and get CDN URL
+    console.log('Uploading image to R2...')
+    const fileName = await generateSoulmateImageFileName()
+    const cdnImageUrl = await uploadImageToR2(openaiImageUrl, fileName)
+    console.log('Image uploaded to R2:', cdnImageUrl)
 
     // Calculate compatibility score (90-100% for soulmates)
     const baseScore = getCompatibilityScore(userSign, soulmateSign)
@@ -59,54 +107,57 @@ export async function POST(request: NextRequest) {
       racePreference
     )
 
-    // Store the soulmate in the database
-    const soulmateData = {
-      personalInfo: {
-        name: "Your Soulmate",
-        gender: genderPreference,
-        ethnicity: racePreference
-      },
-      astrologicalInfo: {
-        sun_sign: sunSign,
-        moon_sign: moonSign,
-        rising_sign: risingSign,
-        soulmate_sign: soulmateSign
-      },
-      compatibilityInfo: {
-        compatibility_score: compatibilityScore,
-        analysis: analysis,
-        short_description: `Your passion meets their fiery ${soulmateSign} spirit, igniting thrilling adventures, while your shared ${risingSign} rising fosters an intense emotional bond, creating an unbreakable connection.`
-      },
-      imageUrl: imageUrl
-    }
+    // Generate short description
+    const shortDescription = `Your passion meets their fiery ${soulmateSign} spirit, igniting thrilling adventures, while your shared ${risingSign} rising fosters an intense emotional bond, creating an unbreakable connection.`
 
-    // Call the soulmates API to store the data
-    try {
-      const storeResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/soulmates`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    // Store the soulmate directly in Supabase
+    console.log('Storing soulmate in database...')
+    const { data: soulmateData, error: insertError } = await supabase
+      .from('soulmates')
+      .insert({
+        user_id: userId,
+        personal_info: {
+          name: "Your Soulmate",
+          gender: genderPreference,
+          ethnicity: racePreference
         },
-        body: JSON.stringify(soulmateData)
+        astrological_info: {
+          sun_sign: sunSign,
+          moon_sign: moonSign,
+          rising_sign: risingSign,
+          soulmate_sign: soulmateSign
+        },
+        compatibility_info: {
+          compatibility_score: compatibilityScore,
+          analysis: analysis,
+          short_description: shortDescription
+        },
+        image_url: cdnImageUrl
       })
+      .select()
+      .single()
 
-      if (!storeResponse.ok) {
-        console.error('Failed to store soulmate in database')
-      }
-    } catch (storeError) {
-      console.error('Error storing soulmate:', storeError)
+    if (insertError) {
+      console.error('Error inserting soulmate:', insertError)
+      return NextResponse.json(
+        { error: `Failed to store soulmate: ${insertError.message}` },
+        { status: 500 }
+      )
     }
+
+    console.log('Soulmate stored successfully:', soulmateData)
 
     return NextResponse.json({
       success: true,
       data: {
-        imageUrl,
+        imageUrl: cdnImageUrl,
         soulmateSign,
         compatibilityScore,
         analysis,
         sunSign,
         moonSign,
-        risingSign
+        risingSign,
+        shortDescription
       }
     })
 
