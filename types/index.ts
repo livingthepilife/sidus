@@ -115,14 +115,21 @@ export const GENDER_OPTIONS: GenderOption[] = [
 ];
 
 export const RACE_OPTIONS: RaceOption[] = [
-  { value: 'white', label: 'White' },
-  { value: 'black', label: 'Black' },
+  { value: 'white', label: 'White/Caucasian' },
+  { value: 'black', label: 'Black/African American' },
   { value: 'hispanic', label: 'Hispanic/Latino' },
   { value: 'asian', label: 'Asian' },
+  { value: 'south_asian', label: 'South Asian' },
   { value: 'middle_eastern', label: 'Middle Eastern' },
   { value: 'native_american', label: 'Native American' },
   { value: 'pacific_islander', label: 'Pacific Islander' },
   { value: 'mixed', label: 'Mixed Race' },
+  { value: 'east_asian', label: 'East Asian' },
+  { value: 'southeast_asian', label: 'Southeast Asian' },
+  { value: 'caribbean', label: 'Caribbean' },
+  { value: 'mediterranean', label: 'Mediterranean' },
+  { value: 'nordic', label: 'Nordic' },
+  { value: 'slavic', label: 'Slavic' },
   { value: 'other', label: 'Other' },
 ];
 

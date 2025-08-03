@@ -53,7 +53,7 @@ const TypingMessage: React.FC<TypingMessageProps> = ({ content, isTyping }) => {
   }, [content, isTyping])
 
   return (
-    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words max-w-full chat-message-text">
       {displayedContent}
       {isTyping && currentIndex < content.length && (
         <span className="animate-pulse text-purple-400">|</span>
@@ -95,6 +95,10 @@ export default function ChatPage() {
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState<'chat' | 'gender' | 'race' | 'generating' | 'result'>('chat')
+  const [soulmatePreferences, setSoulmatePreferences] = useState<{
+    gender: string
+    ethnicity: string[]
+  } | null>(null)
   const [genderPreference, setGenderPreference] = useState('')
   const [racePreference, setRacePreference] = useState<string[]>([])
   const [generationProgress, setGenerationProgress] = useState(0)
@@ -129,10 +133,27 @@ export default function ChatPage() {
     }
   }
 
+  const scrollToLatestMessage = () => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current
+      const scrollHeight = container.scrollHeight
+      const clientHeight = container.clientHeight
+      const maxScrollTop = scrollHeight - clientHeight
+      
+      container.scrollTo({
+        top: maxScrollTop,
+        behavior: 'smooth'
+      })
+    }
+  }
+
   useEffect(() => {
-    // Scroll to bottom when new messages are added
+    // Scroll to latest message when new messages are added
     if (messages.length > 0) {
-      scrollToBottom()
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        scrollToLatestMessage()
+      }, 100)
     }
   }, [messages])
 
@@ -166,6 +187,9 @@ export default function ChatPage() {
   const initializeChat = async (userData: User, type: string) => {
     let welcomeMessage = ''
     
+    // Check for preset soulmate compatibility
+    const preset = searchParams.get('preset')
+    
     switch (type) {
       case 'general':
         welcomeMessage = `Hey ${userData.name}! I'm so glad you're here. As we talk, I'll keep your chart, the chart of people you share with me, and other important details you mention in mind.\n\nWhat's on your mind?`
@@ -175,10 +199,45 @@ export default function ChatPage() {
         welcomeMessage = `${userData.zodiacSign}, financial matters require your careful attention today; analyze your budget and make informed decisions. A simple act of kindness can brighten someone's day and create a ripple effect of positivity. Embrace the power of small gestures to make a big difference.`
         break
       case 'compatibility':
-        welcomeMessage = `Who do you want to check compatibility with?`
+        if (preset === 'soulmate') {
+          const soulmateData = localStorage.getItem('soulmateForCompatibility')
+          if (soulmateData) {
+            const soulmate = JSON.parse(soulmateData)
+            welcomeMessage = `I've analyzed your soulmate's astrological profile and I'm excited to share what I've discovered about your cosmic connection! Your compatibility with this ${soulmate.sunSign} sun, ${soulmate.moonSign} moon, ${soulmate.risingSign} rising combination is truly remarkable. This shows you what ideal compatibility looks like for you.`
+          } else {
+            welcomeMessage = `Who do you want to check compatibility with?`
+          }
+        } else {
+          welcomeMessage = `Who do you want to check compatibility with?`
+        }
         break
       case 'soulmate':
-        welcomeMessage = `${userData.name}, the universe is ready to reveal your soulmate! I'll need to know your preferences to divine the perfect cosmic match for you. Are you ready to discover your destined partner?`
+        // Check if user already has a soulmate
+        try {
+          const response = await fetch('/api/soulmates')
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            // User has a soulmate, redirect to results page
+            const soulmate = data.data
+            const imageUrl = soulmate.image_url
+            const compatibility = soulmate.compatibility_info.compatibility_score
+            const soulmateSign = soulmate.astrological_info.soulmate_sign
+            const analysis = soulmate.compatibility_info.analysis
+            const sunSign = soulmate.astrological_info.sun_sign
+            const moonSign = soulmate.astrological_info.moon_sign
+            const risingSign = soulmate.astrological_info.rising_sign
+            
+            const shortDescription = soulmate.compatibility_info.short_description || ''
+            router.push(`/app/soulmate/result?imageUrl=${encodeURIComponent(imageUrl)}&compatibility=${compatibility}&soulmateSign=${encodeURIComponent(soulmateSign)}&analysis=${encodeURIComponent(analysis)}&sunSign=${encodeURIComponent(sunSign)}&moonSign=${encodeURIComponent(moonSign)}&risingSign=${encodeURIComponent(risingSign)}&shortDescription=${encodeURIComponent(shortDescription)}`)
+            return
+          }
+        } catch (error) {
+          console.error('Error checking for existing soulmate:', error)
+        }
+        
+        // No existing soulmate, start with gender selection
+        welcomeMessage = ''
         break
       case 'friend-compatibility':
         welcomeMessage = `Who do you want to check compatibility with?`
@@ -199,24 +258,39 @@ export default function ChatPage() {
         welcomeMessage = `Hello ${userData.name}! How can I guide you today?`
     }
 
-    const initialMessage: Message = {
-      id: '1',
-      role: 'assistant',
-      content: welcomeMessage,
-      timestamp: new Date()
-    }
+    // For soulmate chat, start directly with gender selection
+    if (type === 'soulmate') {
+      setMessages([])
+      setCurrentStep('gender')
+    } else {
+      const initialMessage: Message = {
+        id: '1',
+        role: 'assistant',
+        content: welcomeMessage,
+        timestamp: new Date()
+      }
 
-    setMessages([initialMessage])
-    
-    // Trigger typing animation for initial message
-    setTypingMessageId('1')
-    const typingDuration = welcomeMessage.length * 30 + 500
-    setTimeout(() => {
-      setTypingMessageId(null)
-    }, typingDuration)
+      setMessages([initialMessage])
+      
+      // Trigger typing animation for initial message
+      setTypingMessageId('1')
+      const typingDuration = welcomeMessage.length * 30 + 500
+      setTimeout(() => {
+        setTypingMessageId(null)
+      }, typingDuration)
+    }
 
     // Generate dynamic suggestions
     // await generateDynamicSuggestions(userData, type)
+    
+    // Add suggested responses for soulmate compatibility
+    if (type === 'compatibility' && preset === 'soulmate') {
+      setSuggestedResponses([
+        'What makes us so compatible?',
+        'What challenges might we face together?',
+        'How can we strengthen our connection?'
+      ])
+    }
   }
 
   const generateDynamicSuggestions = async (userData: User, type: string) => {
@@ -265,6 +339,11 @@ export default function ChatPage() {
     }
     setMessages(prev => [...prev, newMessage])
     
+    // Scroll to latest message immediately when message is added
+    setTimeout(() => {
+      scrollToLatestMessage()
+    }, 50)
+    
     // Trigger typing animation for assistant messages
     if (role === 'assistant') {
       setTypingMessageId(newMessage.id)
@@ -273,6 +352,10 @@ export default function ChatPage() {
       const typingDuration = content.length * 30 + 500
       setTimeout(() => {
         setTypingMessageId(null)
+        // Scroll again after typing animation completes
+        setTimeout(() => {
+          scrollToLatestMessage()
+        }, 100)
       }, typingDuration)
 
       // Generate new suggestions after assistant response
@@ -351,17 +434,25 @@ export default function ChatPage() {
     setGenderPreference(gender)
     setCurrentStep('race')
     await addMessage(gender, 'user')
-    await addMessage("Great choice! Now, what ethnic background(s) are you attracted to? You can select multiple options.", 'assistant')
+    await addMessage("Perfect! Now, what ethnic background(s) are you attracted to? You can select multiple options to help me find your perfect cosmic match.", 'assistant')
   }
 
   const handleRaceSelection = async () => {
     if (racePreference.length === 0) return
     
-    setCurrentStep('generating')
-    await addMessage(racePreference.join(', '), 'user')
-    await addMessage("Perfect! Now I'm consulting the cosmic forces to divine your soulmate...", 'assistant')
+    // Store preferences
+    const preferences = {
+      gender: genderPreference,
+      ethnicity: racePreference
+    }
+    setSoulmatePreferences(preferences)
     
-    await generateSoulmate()
+    // Add user selection to chat
+    await addMessage(racePreference.join(', '), 'user')
+    await addMessage("Excellent choices! The universe is ready to reveal your soulmate. Let me consult the cosmic forces...", 'assistant')
+    
+    // Navigate to soulmate generation page
+    router.push(`/app/soulmate/generate?gender=${encodeURIComponent(genderPreference)}&ethnicity=${encodeURIComponent(racePreference.join(','))}`)
   }
 
   const generateSoulmate = async () => {
@@ -552,38 +643,47 @@ export default function ChatPage() {
         {/* Messages Container - Scrollable with proper spacing for mobile */}
         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-4 mobile-chat-messages">
           {messages.map((message) => (
-            <div key={message.id} className="space-y-2">
+            <div key={message.id} className="space-y-2 max-w-full">
               {message.role === 'assistant' && (
-                <div className="flex items-start space-x-2">
-                  <div className="text-sm text-gray-400">Astra:</div>
+                <div className="flex items-start space-x-2 max-w-full">
+                  <div className="text-sm text-gray-400 flex-shrink-0">Astra:</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-gray-300">
+                      {message.role === 'assistant' ? (
+                        <TypingMessage 
+                          content={message.content} 
+                          isTyping={typingMessageId === message.id} 
+                        />
+                      ) : (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words chat-message-text">
+                          {message.content}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
               {message.role === 'user' && (
-                <div className="flex items-start space-x-2">
-                  <div className="text-sm text-gray-400">You:</div>
+                <div className="flex items-start space-x-2 max-w-full">
+                  <div className="text-sm text-gray-400 flex-shrink-0">You:</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words chat-message-text">
+                        {message.content}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
-              <div className={`${message.role === 'user' ? 'text-white' : 'text-gray-300'}`}>
-                {message.role === 'assistant' ? (
-                  <TypingMessage 
-                    content={message.content} 
-                    isTyping={typingMessageId === message.id} 
+              {message.imageUrl && (
+                <div className="mt-3">
+                  <img 
+                    src={message.imageUrl} 
+                    alt="Generated content" 
+                    className="max-w-full h-auto rounded-lg shadow-lg"
                   />
-                ) : (
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {message.content}
-                  </p>
-                )}
-                {message.imageUrl && (
-                  <div className="mt-3">
-                    <img 
-                      src={message.imageUrl} 
-                      alt="Generated content" 
-                      className="max-w-full h-auto rounded-lg shadow-lg"
-                    />
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ))}
           
