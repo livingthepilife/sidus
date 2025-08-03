@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
-import { ArrowLeft, Send, Sparkles, Star } from 'lucide-react'
+import { ArrowLeft, Send, Sparkles, Star, ArrowUp } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 // Remove direct OpenAI imports - we'll use API routes instead
 import { getCompatibilityScore, generateSoulmatePrompt, getZodiacSign } from '@/lib/utils'
@@ -283,7 +283,7 @@ export default function ChatPage() {
   }
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return
+    if (!inputValue.trim() || isLoading || typingMessageId !== null) return
 
     const userMessage = inputValue.trim()
     await addMessage(userMessage, 'user')
@@ -434,7 +434,7 @@ export default function ChatPage() {
   }
 
   const handleSuggestedResponse = async (suggestion: string) => {
-    if (isLoading) return
+    if (isLoading || typingMessageId !== null) return
     
     setSuggestedResponses([])
     await addMessage(suggestion, 'user')
@@ -536,9 +536,9 @@ export default function ChatPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex flex-col h-screen bg-black text-white">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800 flex-shrink-0">
+      <div className="flex flex-col h-screen bg-black text-white mobile-chat-container">
+        {/* Header - Always Visible */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-800 flex-shrink-0 z-10 bg-black">
           <button 
             onClick={() => router.back()}
             className="p-2 hover:bg-gray-800 rounded-lg transition-colors touch-target"
@@ -549,8 +549,8 @@ export default function ChatPage() {
           <div className="w-10" />
         </div>
 
-        {/* Messages Container - Scrollable */}
-        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Messages Container - Scrollable with proper spacing for mobile */}
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-4 mobile-chat-messages">
           {messages.map((message) => (
             <div key={message.id} className="space-y-2">
               {message.role === 'assistant' && (
@@ -704,9 +704,9 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area - Fixed at Bottom */}
+        {/* Input Area - Fixed at Bottom with Mobile Optimization */}
         {(currentStep === 'chat' || currentStep === 'result') && (
-          <div className="border-t border-gray-800 flex-shrink-0 p-4 bg-black pb-safe">
+          <div className="border-t border-gray-800 flex-shrink-0 p-4 bg-black pb-safe z-10 mobile-chat-input-fixed">
             {/* Suggested Responses */}
             {suggestedResponses.length > 0 && (
               <div className="mb-3">
@@ -741,15 +741,25 @@ export default function ChatPage() {
                 style={{
                   height: 'auto',
                   minHeight: '44px',
-                  maxHeight: '120px'
+                  maxHeight: '120px',
+                  paddingTop: '12px',
+                  paddingBottom: '12px'
                 }}
               />
               <button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isLoading}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black rounded-full p-2 hover:bg-gray-200 transition-colors disabled:opacity-50 touch-target"
+                disabled={!inputValue.trim() || isLoading || typingMessageId !== null}
+                className={`absolute right-3 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 touch-target ${
+                  inputValue.trim() && !isLoading && typingMessageId === null
+                    ? 'text-white hover:text-gray-200 hover:bg-gray-700/50'
+                    : 'text-gray-500'
+                }`}
+                style={{ 
+                  top: '50%',
+                  transform: 'translateY(-50%)'
+                }}
               >
-                <Send className="w-4 h-4" />
+                <ArrowUp className="w-4 h-4" />
               </button>
             </div>
           </div>

@@ -14,7 +14,8 @@ import {
   Plus,
   MoreVertical,
   Clock,
-  LogOut
+  LogOut,
+  RefreshCw
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -133,29 +134,42 @@ export default function MainApp() {
   const [activeTab, setActiveTab] = useState('chat')
   const [people, setPeople] = useState<Person[]>([])
   const [loadingPeople, setLoadingPeople] = useState(false)
+  const [loadingUser, setLoadingUser] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadUserData = async () => {
-      if (!authUser) return
-
-      // First try to get user data from localStorage
-      const userData = localStorage.getItem('sidusUser')
-      if (userData) {
-        const parsedUser = JSON.parse(userData)
-        console.log('Loaded user data from localStorage:', parsedUser)
-        if (parsedUser.onboardingCompleted) {
-          setUser(parsedUser)
-          return
-        }
+      if (!authUser) {
+        setLoadingUser(false)
+        return
       }
 
-      // If no localStorage data, try to get from Supabase user_stats
       try {
+        setError(null)
+        
+        // First try to get user data from localStorage
+        const userData = localStorage.getItem('sidusUser')
+        if (userData) {
+          const parsedUser = JSON.parse(userData)
+          console.log('Loaded user data from localStorage:', parsedUser)
+          if (parsedUser.onboardingCompleted) {
+            setUser(parsedUser)
+            setLoadingUser(false)
+            return
+          }
+        }
+
+        // If no localStorage data, try to get from Supabase user_stats
         const { data, error } = await supabase
           .from('user_stats')
           .select('*')
           .eq('user_id', authUser.id)
           .single()
+
+        if (error) {
+          console.error('Supabase error:', error)
+          throw new Error('Failed to load user data')
+        }
 
         if (data && data.astrological_info && data.basic_info) {
           const userData = {
@@ -179,13 +193,28 @@ export default function MainApp() {
         }
       } catch (error) {
         console.error('Error loading user data:', error)
-        // If there's an error, redirect to onboarding to be safe
-        router.push('/onboarding')
+        setError('Failed to load user data. Please try refreshing the page.')
+        // Don't redirect immediately, let user see the error
+      } finally {
+        setLoadingUser(false)
       }
     }
 
     loadUserData()
   }, [authUser, router])
+
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loadingUser) {
+        console.warn('User loading timeout - forcing completion')
+        setLoadingUser(false)
+        setError('Loading timeout. Please refresh the page.')
+      }
+    }, 15000) // 15 second timeout
+
+    return () => clearTimeout(timeout)
+  }, [loadingUser])
 
   // Load people when user data is available and People tab is active
   useEffect(() => {
@@ -322,6 +351,55 @@ export default function MainApp() {
     )
   }
 
+  // Show loading state
+  if (loadingUser) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen cosmic-bg flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 mx-auto bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center animate-spin">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-xl font-semibold text-white">Loading your cosmic profile...</h1>
+            <p className="text-gray-400 text-sm">Please wait while we align the stars</p>
+          </div>
+        </div>
+      </ProtectedRoute>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen cosmic-bg flex items-center justify-center px-4">
+          <div className="text-center space-y-6 max-w-md">
+            <div className="w-16 h-16 mx-auto bg-gradient-to-r from-red-600 to-pink-600 rounded-full flex items-center justify-center">
+              <RefreshCw className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-white mb-2">Something went wrong</h1>
+              <p className="text-gray-400 text-sm mb-6">{error}</p>
+            </div>
+            <div className="space-y-3">
+              <Button onClick={() => window.location.reload()} className="w-full">
+                Refresh Page
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => router.push('/onboarding')} 
+                className="w-full"
+              >
+                Go to Onboarding
+              </Button>
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    )
+  }
+
+  // Show main app
   return (
     <ProtectedRoute>
       <div className="mobile-vh-fix flex flex-col mobile-container">

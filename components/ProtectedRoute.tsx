@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -17,14 +17,29 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const [redirecting, setRedirecting] = useState(false)
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !redirecting) {
+      setRedirecting(true)
       router.push(redirectTo)
     }
-  }, [user, loading, router, redirectTo])
+  }, [user, loading, router, redirectTo, redirecting])
 
-  if (loading) {
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('ProtectedRoute loading timeout - forcing redirect')
+        setRedirecting(true)
+        router.push(redirectTo)
+      }
+    }, 8000) // 8 second timeout
+
+    return () => clearTimeout(timeout)
+  }, [loading, router, redirectTo])
+
+  if (loading && !redirecting) {
     return (
       <div className="min-h-screen cosmic-bg flex items-center justify-center">
         <motion.div
@@ -46,7 +61,7 @@ export default function ProtectedRoute({
     )
   }
 
-  if (!user) {
+  if (!user || redirecting) {
     return null // Will redirect via useEffect
   }
 

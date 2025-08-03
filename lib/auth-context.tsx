@@ -31,13 +31,31 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
+    let mounted = true
+
     // Get initial session
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      setLoading(false)
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (mounted) {
+          if (error) {
+            console.error('Error getting session:', error)
+          }
+          setUser(session?.user ?? null)
+          setLoading(false)
+          setInitialized(true)
+        }
+      } catch (error) {
+        console.error('Error in getSession:', error)
+        if (mounted) {
+          setLoading(false)
+          setInitialized(true)
+        }
+      }
     }
 
     getSession()
@@ -45,14 +63,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.id)
-        setUser(session?.user ?? null)
-        setLoading(false)
+        if (mounted) {
+          console.log('Auth state change:', event, session?.user?.id)
+          setUser(session?.user ?? null)
+          setLoading(false)
+          setInitialized(true)
+        }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
+
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading && !initialized) {
+        console.warn('Auth loading timeout - forcing completion')
+        setLoading(false)
+        setInitialized(true)
+      }
+    }, 10000) // 10 second timeout
+
+    return () => clearTimeout(timeout)
+  }, [loading, initialized])
 
   const signOut = async () => {
     await supabase.auth.signOut()

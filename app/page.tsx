@@ -6,10 +6,12 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 
 export default function LandingPage() {
   const router = useRouter()
   const { user, signOut, loading } = useAuth()
+  const [pageLoading, setPageLoading] = useState(true)
 
   const handleBeginOnboarding = () => {
     router.push('/onboarding')
@@ -26,6 +28,40 @@ export default function LandingPage() {
   const handleSignOut = async () => {
     await signOut()
     router.push('/')
+  }
+
+  // Set page loading to false after auth loading is complete
+  useEffect(() => {
+    if (!loading) {
+      setPageLoading(false)
+    }
+  }, [loading])
+
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Landing page loading timeout - forcing completion')
+        setPageLoading(false)
+      }
+    }, 10000) // 10 second timeout
+
+    return () => clearTimeout(timeout)
+  }, [loading])
+
+  // Show loading state while auth is loading
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen cosmic-bg flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center animate-spin">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-xl font-semibold text-white">Loading Sidus...</h1>
+          <p className="text-gray-400 text-sm">Please wait while we align the stars</p>
+        </div>
+      </div>
+    )
   }
 
   return (

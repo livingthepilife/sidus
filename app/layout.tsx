@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export const viewport = {
   width: 'device-width',
@@ -70,11 +71,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="font-aleo cosmic-bg min-h-screen overflow-x-hidden">
-        <AuthProvider>
-          <div className="relative z-10 w-full max-w-full">
-            {children}
-          </div>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <div className="relative z-10 w-full max-w-full">
+              {children}
+            </div>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )
