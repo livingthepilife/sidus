@@ -31,13 +31,12 @@ export async function POST(request: NextRequest) {
     const { 
       userSign, 
       genderPreference, 
-      racePreference,
-      userId
+      racePreference
     } = await request.json()
 
-    console.log('Received parameters:', { userSign, genderPreference, racePreference, userId })
+    console.log('Received parameters:', { userSign, genderPreference, racePreference })
 
-    if (!userSign || !genderPreference || !racePreference || !userId) {
+    if (!userSign || !genderPreference || !racePreference) {
       console.log('Missing required parameters')
       return NextResponse.json(
         { error: 'Missing required parameters' },
@@ -47,11 +46,23 @@ export async function POST(request: NextRequest) {
 
     console.log('Using service role key:', isUsingServiceRole)
 
+    // Get the current user from server-side auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      console.log('Authentication error:', authError)
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      )
+    }
+
+    console.log('Authenticated user:', user.id)
+
     // Check if user already has a recent soulmate (within last 30 seconds) to prevent duplicates
     const { data: recentSoulmate, error: checkError } = await supabase
       .from('soulmates')
       .select('id, created_at')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .gte('created_at', new Date(Date.now() - 30000).toISOString()) // Last 30 seconds
       .order('created_at', { ascending: false })
       .limit(1)
@@ -115,7 +126,7 @@ export async function POST(request: NextRequest) {
     const { data: soulmateData, error: insertError } = await supabase
       .from('soulmates')
       .insert({
-        user_id: userId,
+        user_id: user.id,
         personal_info: {
           name: "Your Soulmate",
           gender: genderPreference,
@@ -163,8 +174,22 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Soulmate generation error:', error)
+    let errorMessage = 'Failed to generate soulmate'
+    
+    if (error instanceof Error) {
+      if (error.message.includes('OPENAI_API_KEY')) {
+        errorMessage = 'OpenAI API configuration error'
+      } else if (error.message.includes('Failed to upload image')) {
+        errorMessage = 'Image upload failed'
+      } else if (error.message.includes('Failed to generate soulmate image')) {
+        errorMessage = 'Image generation failed'
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to generate soulmate' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

@@ -29,6 +29,14 @@ export default function SoulmateGenerationPage() {
   const [hasGenerated, setHasGenerated] = useState(false)
 
   useEffect(() => {
+    // Check if user is logged in
+    const userData = localStorage.getItem('sidusUser')
+    if (!userData) {
+      setError('Please log in to generate your soulmate')
+      setIsGenerating(false)
+      return
+    }
+
     if (genderPreference && ethnicityPreference && !hasGenerated) {
       setHasGenerated(true)
       generateSoulmate()
@@ -60,28 +68,53 @@ export default function SoulmateGenerationPage() {
 
       // Get user data from localStorage
       const userData = localStorage.getItem('sidusUser')
+      console.log('User data from localStorage:', userData)
       if (!userData) {
-        throw new Error('User data not found')
+        throw new Error('User data not found - Please log in')
       }
       const user = JSON.parse(userData)
+      console.log('Parsed user data:', user)
 
-      // Call soulmate API to generate everything
-      const response = await fetch('/api/soulmate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          genderPreference,
-          racePreference: ethnicityPreference.split(','),
-          userSign: user.zodiacSign,
-          userId: user.userId
+            // Call soulmate API to generate everything with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
+      
+      let data: any
+      
+      try {
+        const response = await fetch('/api/soulmate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            genderPreference,
+            racePreference: ethnicityPreference.split(','),
+            userSign: user.zodiacSign
+          }),
+          signal: controller.signal
         })
-      })
+        
+        clearTimeout(timeoutId)
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
 
-      const data = await response.json()
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to generate soulmate')
+        data = await response.json()
+        if (!data.success) {
+          console.error('Soulmate API error:', data.error)
+          if (data.error?.includes('Unauthorized')) {
+            throw new Error('Please log in to generate your soulmate')
+          }
+          throw new Error(data.error || 'Failed to generate soulmate')
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId)
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          throw new Error('Soulmate generation timed out. Please try again.')
+        }
+        throw fetchError
       }
 
       const { imageUrl, soulmateSign, compatibilityScore, analysis, sunSign, moonSign, risingSign, shortDescription } = data.data
