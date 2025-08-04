@@ -221,7 +221,7 @@ IMPORTANT GUIDELINES:
 export async function generateSoulmateImage(prompt: string): Promise<string> {
   try {
     const response = await getOpenAI().images.generate({
-      model: "gpt-image-1",
+      model: "dall-e-3",
       prompt: prompt,
       size: "1024x1024",
       quality: "standard",
