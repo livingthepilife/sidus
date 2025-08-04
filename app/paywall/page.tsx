@@ -105,37 +105,18 @@ export default function PaywallPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-black text-white overflow-y-auto">
-        <div className="min-h-screen flex flex-col justify-center px-6 py-12">
-          <div className="flex-1 max-w-md mx-auto w-full flex flex-col justify-center">
+      <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen flex flex-col px-6 py-8 overflow-y-auto">
+          <div className="max-w-md mx-auto w-full flex flex-col justify-center min-h-full">
             
-            {/* Hero Icon - Simple constellation and hand like Astra */}
+            {/* Hero Icon - Just star constellation like Astra */}
             <div className="text-center mb-8">
-              <div className="relative w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+              <div className="relative w-16 h-16 mx-auto mb-6">
                 {/* Star constellation */}
-                <div className="relative">
-                  <Star className="w-8 h-8 text-white absolute top-0 left-4" />
-                  <div className="w-2 h-2 bg-white rounded-full absolute top-2 right-0" />
-                  <div className="w-2 h-2 bg-white rounded-full absolute bottom-4 left-0" />
-                  <div className="w-1 h-1 bg-white rounded-full absolute bottom-0 right-2" />
-                </div>
-                
-                {/* Hand underneath */}
-                <div className="mt-8">
-                  <svg 
-                    className="w-12 h-12 text-white" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={1.5}
-                      d="M7 11.5V14m0-2.5v-5a1.5 1.5 0 113 0m-3 5a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V9a1.5 1.5 0 013 0v5"
-                    />
-                  </svg>
-                </div>
+                <Star className="w-8 h-8 text-white absolute top-0 left-4" />
+                <div className="w-2 h-2 bg-white rounded-full absolute top-2 right-0" />
+                <div className="w-2 h-2 bg-white rounded-full absolute bottom-4 left-0" />
+                <div className="w-1 h-1 bg-white rounded-full absolute bottom-0 right-2" />
               </div>
             </div>
 
@@ -169,7 +150,7 @@ export default function PaywallPage() {
             )}
 
             {/* Value Proposition - Simple and lighter */}
-            <div className="space-y-6 mb-12 text-center">
+            <div className="space-y-6 mb-8 text-center">
               <p className="text-lg leading-relaxed text-gray-300">
                 Sidus is your guide to your life and the universe. Whether it's finding your soulmate, working through life challenges, or becoming the best version of yourself, Sidus can show you the way.
               </p>
@@ -184,7 +165,7 @@ export default function PaywallPage() {
             </div>
 
             {/* Team Signature */}
-            <div className="text-center mb-12">
+            <div className="text-center mb-8">
               <p className="text-xl font-script italic text-gray-400 mb-2">
                 The Sidus Team
               </p>
@@ -212,7 +193,7 @@ export default function PaywallPage() {
 
             {/* CTA Button - Simple like Astra */}
             <button
-              className="w-full bg-white text-black rounded-full py-4 px-6 font-semibold text-lg transition-opacity duration-300 disabled:opacity-70 mb-4"
+              className="w-full bg-white text-black rounded-full py-4 px-6 font-semibold text-lg transition-opacity duration-300 disabled:opacity-70 mb-3"
               onClick={handleStartTrial}
               disabled={isLoading || loadingUserData}
             >
@@ -227,16 +208,16 @@ export default function PaywallPage() {
 
             {/* Pricing Info */}
             <p className="text-center text-gray-400 text-sm mb-8">
-              {STRIPE_PRICING.weekly.trialDays}-day free trial, then {formatPrice(STRIPE_PRICING.weekly.price)} per week
+              7-day free trial, then $6.99 per week
             </p>
 
-          </div>
+            {/* Footer Links */}
+            <div className="flex justify-center space-x-8 text-sm text-gray-500 mb-4">
+              <button className="hover:text-gray-300 transition-colors">Terms</button>
+              <button className="hover:text-gray-300 transition-colors">Privacy</button>
+              <button className="hover:text-gray-300 transition-colors">Restore</button>
+            </div>
 
-          {/* Footer Links */}
-          <div className="px-6 py-6 flex justify-center space-x-8 text-sm text-gray-500">
-            <button className="hover:text-gray-300 transition-colors">Terms</button>
-            <button className="hover:text-gray-300 transition-colors">Privacy</button>
-            <button className="hover:text-gray-300 transition-colors">Restore</button>
           </div>
         </div>
       </div>
