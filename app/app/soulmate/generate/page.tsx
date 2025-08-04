@@ -1,148 +1,181 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Sparkles, ArrowLeft } from 'lucide-react'
-import ProtectedRoute from '@/components/ProtectedRoute'
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
+import { Sparkles, ArrowLeft } from "lucide-react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface SoulmateData {
-  imageUrl: string
-  compatibilityScore: number
-  analysis: string
-  soulmateSign: string
-  sunSign: string
-  moonSign: string
-  risingSign: string
+  imageUrl: string;
+  compatibilityScore: number;
+  analysis: string;
+  soulmateSign: string;
+  sunSign: string;
+  moonSign: string;
+  risingSign: string;
 }
 
 export default function SoulmateGenerationPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const genderPreference = searchParams.get('gender') || ''
-  const ethnicityPreference = searchParams.get('ethnicity') || ''
-  
-  const [generationProgress, setGenerationProgress] = useState(0)
-  const [soulmateData, setSoulmateData] = useState<SoulmateData | null>(null)
-  const [isGenerating, setIsGenerating] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [hasGenerated, setHasGenerated] = useState(false)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const genderPreference = searchParams.get("gender") || "";
+  const ethnicityPreference = searchParams.get("ethnicity") || "";
+
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [soulmateData, setSoulmateData] = useState<SoulmateData | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasGenerated, setHasGenerated] = useState(false);
+  const [progressInterval, setProgressInterval] =
+    useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Check if user is logged in
-    const userData = localStorage.getItem('sidusUser')
+    const userData = localStorage.getItem("sidusUser");
     if (!userData) {
-      setError('Please log in to generate your soulmate')
-      setIsGenerating(false)
-      return
+      setError("Please log in to generate your soulmate");
+      setIsGenerating(false);
+      return;
     }
 
     if (genderPreference && ethnicityPreference && !hasGenerated) {
-      setHasGenerated(true)
-      generateSoulmate()
+      setHasGenerated(true);
+      generateSoulmate();
     }
-  }, [genderPreference, ethnicityPreference, hasGenerated])
+  }, [genderPreference, ethnicityPreference, hasGenerated]);
+
+  useEffect(() => {
+    return () => {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+    };
+  }, [progressInterval]);
 
   const generateSoulmate = async () => {
     // Prevent multiple simultaneous generations
     if (isGenerating) {
-      console.log('Generation already in progress, skipping...')
-      return
+      console.log("Generation already in progress, skipping...");
+      return;
     }
-    
+
     try {
-      console.log('Starting soulmate generation...')
-      setIsGenerating(true)
-      setError(null)
-      setGenerationProgress(0)
-      
-      console.log('Starting progress animation...')
+      console.log("Starting soulmate generation...");
+      setIsGenerating(true);
+      setError(null);
+      setGenerationProgress(0);
+      setHasGenerated(true);
+
+      console.log("Starting progress animation...");
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+
       // Progress animation - more realistic timing
-      const progressInterval = setInterval(() => {
-        setGenerationProgress(prev => {
+      const newProgressInterval = setInterval(() => {
+        setGenerationProgress((prev) => {
           if (prev >= 95) {
-            clearInterval(progressInterval)
-            console.log('Progress reached 95%, stopping animation')
-            return 95
+            clearInterval(newProgressInterval);
+            setProgressInterval(null);
+            console.log("Progress reached 95%, stopping animation");
+            return 95;
           }
           // Slower, more realistic progress
-          const newProgress = prev + Math.random() * 8 + 2
-          console.log(`Progress: ${newProgress.toFixed(1)}%`)
-          return newProgress
-        })
-      }, 800)
+          const newProgress = prev + Math.random() * 6 + 1;
+          console.log(`Progress: ${newProgress.toFixed(1)}%`);
+          return newProgress;
+        });
+      }, 600);
+
+      setProgressInterval(newProgressInterval);
 
       // Get user data from localStorage
-      const userData = localStorage.getItem('sidusUser')
-      console.log('User data from localStorage:', userData)
+      const userData = localStorage.getItem("sidusUser");
+      console.log("User data from localStorage:", userData);
       if (!userData) {
-        throw new Error('User data not found - Please log in')
+        throw new Error("User data not found - Please log in");
       }
-      const user = JSON.parse(userData)
-      console.log('Parsed user data:', user)
-      console.log('User ID field:', user.userId || user.id)
-      console.log('User zodiac sign:', user.zodiacSign)
-      
-      // Validate required user data
+      const user = JSON.parse(userData);
+      console.log("Parsed user data:", user);
+      console.log("User ID field:", user.userId || user.id);
+      console.log("User zodiac sign:", user.zodiacSign);
+
       if (!user.zodiacSign) {
-        throw new Error('Zodiac sign not found in user data')
+        throw new Error("Zodiac sign not found in user data");
       }
 
-            console.log('Making API call to /api/soulmate...')
+      console.log("Making API call to /api/soulmate...");
       // Call soulmate API to generate everything with timeout
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
-      
-      let data: any
-      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+      let data: any;
+
       try {
-        console.log('Sending request with data:', {
+        console.log("Sending request with data:", {
           genderPreference,
-          racePreference: ethnicityPreference.split(','),
-          userSign: user.zodiacSign
-        })
-        
-        const response = await fetch('/api/soulmate', {
-          method: 'POST',
+          racePreference: ethnicityPreference.split(","),
+          userSign: user.zodiacSign,
+        });
+
+        const response = await fetch("/api/soulmate", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             genderPreference,
-            racePreference: ethnicityPreference.split(','),
-            userSign: user.zodiacSign
+            racePreference: ethnicityPreference.split(","),
+            userSign: user.zodiacSign,
           }),
-          signal: controller.signal
-        })
-        
-        clearTimeout(timeoutId)
-        console.log('Response received:', response.status, response.statusText)
-        
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+        console.log("Response received:", response.status, response.statusText);
+
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          const errorData = await response.json().catch(() => ({}));
+          const errorMsg =
+            errorData.error ||
+            `HTTP ${response.status}: ${response.statusText}`;
+          throw new Error(errorMsg);
         }
 
-        data = await response.json()
-        console.log('Response data:', data)
+        data = await response.json();
+        console.log("Response data:", data);
         if (!data.success) {
-          console.error('Soulmate API error:', data.error)
-          if (data.error?.includes('Unauthorized')) {
-            throw new Error('Please log in to generate your soulmate')
+          console.error("Soulmate API error:", data.error);
+          if (data.error?.includes("Unauthorized")) {
+            throw new Error("Please log in to generate your soulmate");
           }
-          throw new Error(data.error || 'Failed to generate soulmate')
+          throw new Error(data.error || "Failed to generate soulmate");
         }
       } catch (fetchError) {
-        clearTimeout(timeoutId)
-        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-          throw new Error('Soulmate generation timed out. Please try again.')
+        clearTimeout(timeoutId);
+        if (fetchError instanceof Error && fetchError.name === "AbortError") {
+          throw new Error("Soulmate generation timed out. Please try again.");
         }
-        throw fetchError
+        throw fetchError;
       }
 
-      const { imageUrl, soulmateSign, compatibilityScore, analysis, sunSign, moonSign, risingSign, shortDescription } = data.data
+      const {
+        imageUrl,
+        soulmateSign,
+        compatibilityScore,
+        analysis,
+        sunSign,
+        moonSign,
+        risingSign,
+        shortDescription,
+      } = data.data;
 
-      clearInterval(progressInterval)
-      
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        setProgressInterval(null);
+      }
+
       setSoulmateData({
         imageUrl,
         compatibilityScore,
@@ -150,42 +183,70 @@ export default function SoulmateGenerationPage() {
         soulmateSign,
         sunSign,
         moonSign,
-        risingSign
-      })
-      
-      setIsGenerating(false)
-      
+        risingSign,
+      });
+
       // Show completion message briefly before redirecting
       setTimeout(() => {
-        setGenerationProgress(100)
+        setGenerationProgress(100);
+        setIsGenerating(false);
         // Navigate to results page after showing completion message
         setTimeout(() => {
-          router.push(`/app/soulmate/result?imageUrl=${encodeURIComponent(imageUrl)}&compatibility=${compatibilityScore}&soulmateSign=${encodeURIComponent(soulmateSign)}&analysis=${encodeURIComponent(analysis)}&sunSign=${encodeURIComponent(sunSign)}&moonSign=${encodeURIComponent(moonSign)}&risingSign=${encodeURIComponent(risingSign)}&shortDescription=${encodeURIComponent(shortDescription)}`)
-        }, 1500) // Show completion message for 1.5 seconds
-      }, 500) // Brief pause before showing completion
-      
+          router.push(
+            `/app/soulmate/result?imageUrl=${encodeURIComponent(
+              imageUrl
+            )}&compatibility=${compatibilityScore}&soulmateSign=${encodeURIComponent(
+              soulmateSign
+            )}&analysis=${encodeURIComponent(
+              analysis
+            )}&sunSign=${encodeURIComponent(
+              sunSign
+            )}&moonSign=${encodeURIComponent(
+              moonSign
+            )}&risingSign=${encodeURIComponent(
+              risingSign
+            )}&shortDescription=${encodeURIComponent(shortDescription)}`
+          );
+        }, 1000);
+      }, 300); 
     } catch (error) {
-      console.error('Error generating soulmate:', error)
-      let errorMessage = 'Failed to generate soulmate. Please try again.'
-      
+      console.error("Error generating soulmate:", error);
+      let errorMessage = "Failed to generate soulmate. Please try again.";
+
       if (error instanceof Error) {
-        if (error.message.includes('OPENAI_API_KEY')) {
-          errorMessage = 'API configuration error. Please check your OpenAI API key.'
-        } else if (error.message.includes('Failed to generate soulmate image')) {
-          errorMessage = 'Image generation failed. Please try again.'
-        } else if (error.message.includes('Failed to generate soulmate')) {
-          errorMessage = 'Soulmate generation failed. Please try again.'
+        if (error.message.includes("OPENAI_API_KEY")) {
+          errorMessage =
+            "API configuration error. Please check your OpenAI API key.";
+        } else if (
+          error.message.includes("Failed to generate soulmate image")
+        ) {
+          errorMessage = "Image generation failed. Please try again.";
+        } else if (error.message.includes("Failed to generate soulmate")) {
+          errorMessage = "Soulmate generation failed. Please try again.";
+        } else if (
+          error.message.includes("429") ||
+          error.message.includes("wait a moment")
+        ) {
+          errorMessage =
+            "Please wait a moment before generating another soulmate.";
+        } else if (
+          error.message.includes("network") ||
+          error.message.includes("fetch")
+        ) {
+          errorMessage =
+            "Network error. Please check your connection and try again.";
         }
       }
-      
-      setError(errorMessage)
-      setIsGenerating(false)
+
+      setError(errorMessage);
+      setIsGenerating(false);
+      setHasGenerated(false)
     }
-  }
+  };
 
   const handleBack = () => {
-    router.push('/app/chat?type=soulmate')
-  }
+    router.push("/app/chat?type=soulmate");
+  };
 
   return (
     <ProtectedRoute>
@@ -213,43 +274,43 @@ export default function SoulmateGenerationPage() {
               {/* Animated Star */}
               <div className="relative">
                 <motion.div
-                  animate={{ 
+                  animate={{
                     rotate: 360,
                     scale: [1, 1.2, 1],
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 3,
                     repeat: Infinity,
-                    ease: "easeInOut"
+                    ease: "easeInOut",
                   }}
                   className="w-24 h-24 mx-auto mb-6"
                 >
                   <Sparkles className="w-full h-full text-purple-400" />
                 </motion.div>
-                
+
                 {/* Floating dots */}
                 <motion.div
-                  animate={{ 
+                  animate={{
                     y: [-10, 10, -10],
-                    opacity: [0.5, 1, 0.5]
+                    opacity: [0.5, 1, 0.5],
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 2,
                     repeat: Infinity,
-                    ease: "easeInOut"
+                    ease: "easeInOut",
                   }}
                   className="absolute top-4 right-8 w-2 h-2 bg-purple-400 rounded-full"
                 />
                 <motion.div
-                  animate={{ 
+                  animate={{
                     y: [10, -10, 10],
-                    opacity: [0.5, 1, 0.5]
+                    opacity: [0.5, 1, 0.5],
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 2.5,
                     repeat: Infinity,
                     ease: "easeInOut",
-                    delay: 0.5
+                    delay: 0.5,
                   }}
                   className="absolute bottom-4 left-8 w-2 h-2 bg-blue-400 rounded-full"
                 />
@@ -343,15 +404,33 @@ export default function SoulmateGenerationPage() {
               </div>
             </motion.div>
           ) : error ? (
-            <div className="text-center space-y-4">
-              <div className="text-red-400 text-lg">{error}</div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center space-y-6 max-w-md"
+            >
+              <div className="w-16 h-16 mx-auto mb-4">
+                <div className="w-full h-full rounded-full bg-red-500/20 flex items-center justify-center">
+                  <span className="text-red-400 text-2xl">✕</span>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  Generation Failed
+                </h3>
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
               <button
-                onClick={generateSoulmate}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                onClick={() => {
+                  setError(null);
+                  setHasGenerated(false);
+                  generateSoulmate();
+                }}
+                className="px-8 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors font-medium"
               >
                 Try Again
               </button>
-            </div>
+            </motion.div>
           ) : (
             <div className="text-center space-y-4">
               <div className="text-green-400 text-lg">Generation Complete!</div>
@@ -361,5 +440,5 @@ export default function SoulmateGenerationPage() {
         </div>
       </div>
     </ProtectedRoute>
-  )
-} 
+  );
+}
