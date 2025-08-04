@@ -271,49 +271,101 @@ export default function SoulmateGenerationPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center space-y-8 max-w-md"
             >
-              {/* Animated Star */}
-              <div className="relative">
-                <motion.div
-                  animate={{
-                    rotate: 360,
-                    scale: [1, 1.2, 1],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="w-24 h-24 mx-auto mb-6"
-                >
-                  <Sparkles className="w-full h-full text-purple-400" />
-                </motion.div>
-
-                {/* Floating dots */}
-                <motion.div
-                  animate={{
-                    y: [-10, 10, -10],
-                    opacity: [0.5, 1, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute top-4 right-8 w-2 h-2 bg-purple-400 rounded-full"
-                />
-                <motion.div
-                  animate={{
-                    y: [10, -10, 10],
-                    opacity: [0.5, 1, 0.5],
-                  }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.5,
-                  }}
-                  className="absolute bottom-4 left-8 w-2 h-2 bg-blue-400 rounded-full"
-                />
+              {/* Square Soulmate Generation Animation */}
+              <div className="relative w-64 h-64 mx-auto mb-6">
+                {/* Main square frame */}
+                <div className="w-full h-full border-2 border-purple-500 rounded-2xl relative overflow-hidden bg-gradient-to-br from-purple-900/20 to-blue-900/20">
+                  {/* Animated gradient overlay */}
+                  <motion.div
+                    animate={{
+                      backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="absolute inset-0 bg-gradient-to-br from-purple-500/30 via-blue-500/30 to-purple-500/30 opacity-50"
+                    style={{
+                      backgroundSize: "200% 200%",
+                    }}
+                  />
+                  
+                  {/* Central sparkle animation */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.div
+                      animate={{
+                        rotate: 360,
+                        scale: [1, 1.3, 1],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      className="w-12 h-12"
+                    >
+                      <Sparkles className="w-full h-full text-white" />
+                    </motion.div>
+                  </div>
+                  
+                  {/* Floating elements */}
+                  <motion.div
+                    animate={{
+                      y: [-15, 15, -15],
+                      x: [-5, 5, -5],
+                      opacity: [0.4, 1, 0.4],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="absolute top-8 right-8 w-3 h-3 bg-purple-400 rounded-full"
+                  />
+                  <motion.div
+                    animate={{
+                      y: [15, -15, 15],
+                      x: [5, -5, 5],
+                      opacity: [0.4, 1, 0.4],
+                    }}
+                    transition={{
+                      duration: 3.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 0.8,
+                    }}
+                    className="absolute bottom-8 left-8 w-3 h-3 bg-blue-400 rounded-full"
+                  />
+                  <motion.div
+                    animate={{
+                      y: [-10, 10, -10],
+                      x: [8, -8, 8],
+                      opacity: [0.3, 0.8, 0.3],
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 1.2,
+                    }}
+                    className="absolute top-16 left-12 w-2 h-2 bg-pink-400 rounded-full"
+                  />
+                  
+                  {/* Subtle face outline hint */}
+                  <motion.div
+                    animate={{
+                      opacity: [0, 0.3, 0],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 1.5,
+                    }}
+                    className="absolute inset-8 rounded-full border border-white/20"
+                  />
+                </div>
               </div>
 
               {/* Title */}
@@ -426,7 +478,7 @@ export default function SoulmateGenerationPage() {
                   setHasGenerated(false);
                   generateSoulmate();
                 }}
-                className="px-8 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors font-medium"
+                className="px-8 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-all duration-300 font-medium shadow-lg hover:shadow-xl active:scale-95"
               >
                 Try Again
               </button>

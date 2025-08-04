@@ -651,33 +651,23 @@ export default function ChatPage() {
           {messages.map((message) => (
             <div key={message.id} className="space-y-2 max-w-full">
               {message.role === 'assistant' && (
-                <div className="flex items-start space-x-2 max-w-full">
-                  <div className="text-sm text-gray-400 flex-shrink-0">Astra:</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-gray-300">
-                      {message.role === 'assistant' ? (
-                        <TypingMessage 
-                          content={message.content} 
-                          isTyping={typingMessageId === message.id} 
-                        />
-                      ) : (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words chat-message-text">
-                          {message.content}
-                        </p>
-                      )}
-                    </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-400">Astra:</div>
+                  <div className="text-gray-300">
+                    <TypingMessage 
+                      content={message.content} 
+                      isTyping={typingMessageId === message.id} 
+                    />
                   </div>
                 </div>
               )}
               {message.role === 'user' && (
-                <div className="flex items-start space-x-2 max-w-full">
-                  <div className="text-sm text-gray-400 flex-shrink-0">You:</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words chat-message-text">
-                        {message.content}
-                      </p>
-                    </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-400">You:</div>
+                  <div className="text-white">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words chat-message-text">
+                      {message.content}
+                    </p>
                   </div>
                 </div>
               )}

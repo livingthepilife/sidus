@@ -10,6 +10,8 @@ import {
   Heart,
   Star,
   Moon,
+  Sun,
+  TrendingUp,
 } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -99,13 +101,13 @@ export default function SoulmateResultPage() {
     const userData = localStorage.getItem("sidusUser");
     const userSign = userData ? JSON.parse(userData).zodiacSign : "Aquarius";
 
-    // Generate a short, spicy description based on the signs
+    // Generate concise, trait-focused descriptions
     const descriptions = [
       `Your ${userSign} passion meets their fiery ${sunSign} spirit, igniting thrilling adventures, while your shared ${risingSign} rising fosters an intense emotional bond, creating an unbreakable connection.`,
-      `The cosmic dance between ${userSign} and ${sunSign} creates a magnetic attraction that transcends the ordinary, with your ${moonSign} moon adding depth to every moment shared.`,
-      `Your ${userSign} energy harmonizes perfectly with their ${sunSign} nature, creating a love story written in the stars, while your ${risingSign} rising ensures a connection that grows stronger with time.`,
-      `The universe has aligned ${userSign} and ${sunSign} in perfect harmony, with your ${moonSign} moon adding emotional depth to a relationship destined for greatness.`,
-      `Your ${userSign} soul finds its perfect match in their ${sunSign} spirit, creating a bond that's both passionate and profound, with your ${risingSign} rising ensuring lasting compatibility.`,
+      `The magnetic attraction between ${userSign} and ${sunSign} creates extraordinary chemistry, with your ${moonSign} moon connection adding emotional depth to every shared moment.`,
+      `Your ${userSign} energy perfectly complements their ${sunSign} nature, while your ${risingSign} rising ensures a connection that deepens with time and shared experiences.`,
+      `The cosmic alignment of ${userSign} and ${sunSign} creates passionate harmony, with your ${moonSign} moon fostering intuitive understanding and emotional intimacy.`,
+      `Your ${userSign} soul resonates with their ${sunSign} spirit, creating both passionate attraction and profound emotional connection through your ${risingSign} rising.`,
     ];
 
     return descriptions[Math.floor(Math.random() * descriptions.length)];
@@ -156,19 +158,19 @@ export default function SoulmateResultPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-4 pb-24 space-y-6 flex flex-col items-center justify-center">
-          {/* Soulmate Image - Square and Centered */}
+        <div className="flex-1 p-6 pb-24 space-y-6 flex flex-col items-center justify-center max-w-md mx-auto">
+          {/* Soulmate Image - Square Frame */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             className="relative"
           >
-            <div className="relative rounded-2xl overflow-hidden border-2 border-purple-500/30 w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96">
+            <div className="relative rounded-3xl overflow-hidden border-2 border-purple-500/40 w-72 h-72 bg-gradient-to-br from-purple-900/10 to-blue-900/10">
               <img
                 src={imageUrl}
                 alt="Your Soulmate"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-center"
                 onLoad={() => {
                   setIsImageLoading(false);
                   setImageError(false);
@@ -195,13 +197,6 @@ export default function SoulmateResultPage() {
                   Image failed to load
                 </div>
               )}
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-
-              {/* Compatibility Badge */}
-              <div className="absolute top-4 right-4 bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                {compatibility}% Compatible
-              </div>
             </div>
           </motion.div>
 
@@ -212,75 +207,48 @@ export default function SoulmateResultPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-center"
           >
-            <div className="text-3xl font-bold text-white mb-6">
+            <div className="text-4xl font-bold text-white mb-4">
               {compatibility}% compatible
             </div>
           </motion.div>
 
-          {/* Astrological Signs with Icons */}
+          {/* Astrological Signs with Icons - Horizontal Layout */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex justify-center space-x-8 sm:space-x-12"
+            className="flex items-center justify-center space-x-6"
           >
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                <Sun className="w-4 h-4 text-white" />
               </div>
-              <div className="text-sm text-gray-400">Sun</div>
-              <div className="font-medium text-white">{sunSign}</div>
+              <span className="text-white font-medium">{sunSign}</span>
             </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.319a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-1.667-3.93L15 5.323V7a1 1 0 11-2 0V2z" />
-                </svg>
+            
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
+                <Moon className="w-4 h-4 text-white" />
               </div>
-              <div className="text-sm text-gray-400">Moon</div>
-              <div className="font-medium text-white">{moonSign}</div>
+              <span className="text-white font-medium">{moonSign}</span>
             </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-r from-green-400 to-teal-500 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+            
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-teal-500 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-white" />
               </div>
-              <div className="text-sm text-gray-400">Rising</div>
-              <div className="font-medium text-white">{risingSign}</div>
+              <span className="text-white font-medium">{risingSign}</span>
             </div>
           </motion.div>
 
-          {/* Short Compatibility Description */}
+          {/* Concise Compatibility Description */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="text-center max-w-md mx-auto"
+            className="text-center max-w-sm mx-auto px-4"
           >
-            <p className="text-gray-300 leading-relaxed text-sm">
+            <p className="text-gray-300 leading-relaxed text-center">
               {shortDescription
                 ? decodeURIComponent(shortDescription)
                 : generateShortCompatibilityDescription()}
@@ -331,11 +299,11 @@ export default function SoulmateResultPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
-          className="fixed bottom-0 left-0 right-0 p-4 border-t border-gray-800 bg-black"
+          className="fixed bottom-0 left-0 right-0 p-6 border-t border-gray-800 bg-black/95 backdrop-blur-sm"
         >
           <button
             onClick={handleLearnMore}
-            className="w-full bg-white text-black hover:bg-gray-200 rounded-full py-4 text-lg font-semibold transition-colors flex items-center justify-center space-x-2"
+            className="w-full bg-white text-black hover:bg-gray-100 rounded-full py-4 text-lg font-semibold transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl active:scale-95"
           >
             <span>Tap to learn more</span>
             <ArrowRight className="w-5 h-5" />
