@@ -193,4 +193,6 @@ export default function IntroPage() {
         {/* Subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50 pointer-events-none" />
       </div>
-    </ProtectedRoute
+    </ProtectedRoute>
+  )
+}

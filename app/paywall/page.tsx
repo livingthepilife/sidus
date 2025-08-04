@@ -344,4 +344,126 @@ export default function PaywallPage() {
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <feature.icon className="w-8 h-8 mx-auto mb-2 text-white" />
-                  <p cl
+                  <p className="text-sm font-medium">{feature.text}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Team Signature */}
+            <motion.div 
+              className="text-center mb-8"
+              variants={itemVariants}
+            >
+              <p className="text-xl font-script italic text-gray-200 mb-2">
+                The Sidus Team
+              </p>
+              <Sparkles className="w-5 h-5 mx-auto text-purple-300" />
+            </motion.div>
+
+            {/* Notification Toggle */}
+            <motion.div 
+              className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 mb-6 flex items-center justify-between"
+              variants={itemVariants}
+              whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.15)" }}
+            >
+              <span className="text-white font-medium">
+                Notify me before my trial ends
+              </span>
+              <motion.button
+                className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${
+                  notifyBeforeTrial ? 'bg-green-500' : 'bg-gray-600'
+                }`}
+                onClick={() => setNotifyBeforeTrial(!notifyBeforeTrial)}
+                whileTap={{ scale: 0.95 }}
+              >
+                <motion.div
+                  className="w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300"
+                  animate={{
+                    x: notifyBeforeTrial ? 26 : 2
+                  }}
+                />
+              </motion.button>
+            </motion.div>
+
+            {/* CTA Button */}
+            <motion.button
+              className="w-full bg-white text-purple-900 rounded-full py-4 px-6 font-bold text-lg flex items-center justify-center space-x-2 shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-70"
+              variants={itemVariants}
+              whileHover={{ 
+                scale: isLoading ? 1 : 1.02, 
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" 
+              }}
+              whileTap={{ scale: isLoading ? 1 : 0.98 }}
+              onClick={handleStartTrial}
+              disabled={isLoading || loadingUserData}
+            >
+              {isLoading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="flex items-center space-x-2"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span>Starting your cosmic journey...</span>
+                </motion.div>
+              ) : loadingUserData ? (
+                <span>Loading your profile...</span>
+              ) : (
+                <>
+                  <span>Try Sidus for free</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </motion.button>
+
+            {/* Pricing Info */}
+            <motion.p 
+              className="text-center text-gray-300 mt-4 text-sm"
+              variants={itemVariants}
+            >
+              {STRIPE_PRICING.weekly.trialDays}-day free trial, then {formatPrice(STRIPE_PRICING.weekly.price)} per week
+            </motion.p>
+          </motion.div>
+
+          {/* Footer Links */}
+          <motion.div 
+            className="px-6 py-6 flex justify-center space-x-8 text-sm text-gray-400"
+            variants={itemVariants}
+          >
+            <button className="hover:text-white transition-colors">Terms</button>
+            <button className="hover:text-white transition-colors">Privacy</button>
+            <button className="hover:text-white transition-colors">Restore</button>
+          </motion.div>
+        </div>
+
+        {/* Loading Overlay */}
+        <AnimatePresence>
+          {isLoading && (
+            <motion.div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-white rounded-2xl p-8 text-center"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-8 h-8 mx-auto mb-4"
+                >
+                  <Sparkles className="w-full h-full text-purple-600" />
+                </motion.div>
+                <p className="text-purple-900 font-semibold">Starting your journey...</p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </ProtectedRoute>
+  )
+}
