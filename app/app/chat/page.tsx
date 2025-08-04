@@ -236,8 +236,8 @@ export default function ChatPage() {
           console.error('Error checking for existing soulmate:', error)
         }
         
-        // No existing soulmate, start with gender selection
-        welcomeMessage = ''
+        // No existing soulmate, start with welcome message
+        welcomeMessage = `Hello ${userData.name}! I'm excited to help you find your soulmate. The universe has been whispering about a special connection waiting for you. To divine your perfect match, I need to understand your preferences. What gender are you attracted to?`
         break
       case 'friend-compatibility':
         welcomeMessage = `Who do you want to check compatibility with?`
@@ -258,27 +258,26 @@ export default function ChatPage() {
         welcomeMessage = `Hello ${userData.name}! How can I guide you today?`
     }
 
-    // For soulmate chat, start directly with gender selection
-    if (type === 'soulmate') {
-      setMessages([])
-      setCurrentStep('gender')
-    } else {
-      const initialMessage: Message = {
-        id: '1',
-        role: 'assistant',
-        content: welcomeMessage,
-        timestamp: new Date()
-      }
-
-      setMessages([initialMessage])
-      
-      // Trigger typing animation for initial message
-      setTypingMessageId('1')
-      const typingDuration = welcomeMessage.length * 30 + 500
-      setTimeout(() => {
-        setTypingMessageId(null)
-      }, typingDuration)
+    // Create initial message for all chat types
+    const initialMessage: Message = {
+      id: '1',
+      role: 'assistant',
+      content: welcomeMessage,
+      timestamp: new Date()
     }
+
+    setMessages([initialMessage])
+    
+    // Trigger typing animation for initial message
+    setTypingMessageId('1')
+    const typingDuration = welcomeMessage.length * 30 + 500
+    setTimeout(() => {
+      setTypingMessageId(null)
+      // For soulmate chat, show gender selection after initial message
+      if (type === 'soulmate') {
+        setCurrentStep('gender')
+      }
+    }, typingDuration)
 
     // Generate dynamic suggestions
     // await generateDynamicSuggestions(userData, type)
@@ -433,7 +432,10 @@ export default function ChatPage() {
   const handleGenderSelection = async (gender: string) => {
     setGenderPreference(gender)
     setCurrentStep('race')
-    await addMessage(gender, 'user')
+    
+    // Add user's gender selection as a message with proper label
+    const genderLabel = gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'All'
+    await addMessage(genderLabel, 'user')
     await addMessage("Perfect! Now, what ethnic background(s) are you attracted to? You can select multiple options to help me find your perfect cosmic match.", 'assistant')
   }
 
@@ -447,8 +449,12 @@ export default function ChatPage() {
     }
     setSoulmatePreferences(preferences)
     
-    // Add user selection to chat
-    await addMessage(racePreference.join(', '), 'user')
+    // Add user selection to chat with proper labels
+    const raceLabels = racePreference.map(race => {
+      const raceOption = RACE_OPTIONS.find(option => option.value === race)
+      return raceOption ? raceOption.label : race
+    })
+    await addMessage(raceLabels.join(', '), 'user')
     await addMessage("Excellent choices! The universe is ready to reveal your soulmate. Let me consult the cosmic forces...", 'assistant')
     
     // Navigate to soulmate generation page

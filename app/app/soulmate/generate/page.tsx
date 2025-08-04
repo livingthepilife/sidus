@@ -46,23 +46,29 @@ export default function SoulmateGenerationPage() {
   const generateSoulmate = async () => {
     // Prevent multiple simultaneous generations
     if (isGenerating) {
+      console.log('Generation already in progress, skipping...')
       return
     }
     
     try {
+      console.log('Starting soulmate generation...')
       setIsGenerating(true)
       setError(null)
       setGenerationProgress(0)
       
+      console.log('Starting progress animation...')
       // Progress animation - more realistic timing
       const progressInterval = setInterval(() => {
         setGenerationProgress(prev => {
           if (prev >= 95) {
             clearInterval(progressInterval)
+            console.log('Progress reached 95%, stopping animation')
             return 95
           }
           // Slower, more realistic progress
-          return prev + Math.random() * 8 + 2
+          const newProgress = prev + Math.random() * 8 + 2
+          console.log(`Progress: ${newProgress.toFixed(1)}%`)
+          return newProgress
         })
       }, 800)
 
@@ -74,14 +80,28 @@ export default function SoulmateGenerationPage() {
       }
       const user = JSON.parse(userData)
       console.log('Parsed user data:', user)
+      console.log('User ID field:', user.userId || user.id)
+      console.log('User zodiac sign:', user.zodiacSign)
+      
+      // Validate required user data
+      if (!user.zodiacSign) {
+        throw new Error('Zodiac sign not found in user data')
+      }
 
-            // Call soulmate API to generate everything with timeout
+            console.log('Making API call to /api/soulmate...')
+      // Call soulmate API to generate everything with timeout
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
       
       let data: any
       
       try {
+        console.log('Sending request with data:', {
+          genderPreference,
+          racePreference: ethnicityPreference.split(','),
+          userSign: user.zodiacSign
+        })
+        
         const response = await fetch('/api/soulmate', {
           method: 'POST',
           headers: {
@@ -96,12 +116,14 @@ export default function SoulmateGenerationPage() {
         })
         
         clearTimeout(timeoutId)
+        console.log('Response received:', response.status, response.statusText)
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`)
         }
 
         data = await response.json()
+        console.log('Response data:', data)
         if (!data.success) {
           console.error('Soulmate API error:', data.error)
           if (data.error?.includes('Unauthorized')) {
