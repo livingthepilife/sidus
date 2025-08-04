@@ -193,23 +193,7 @@ export function generateSoulmatePrompt(
     ? racePreferences.join(', ') 
     : 'diverse';
     
-  return `Create a simple, elegant pencil sketch portrait of a ${gender} who would be the perfect soulmate for a ${userSign}. The person should be ${ethnicity} ethnicity. 
-
-CRITICAL REQUIREMENTS:
-- The face must be perfectly centered in the frame
-- Focus primarily on the face and head, minimal body/shoulders
-- Use a clean, simple pencil sketch style with subtle shading
-- Show a warm, approachable, slightly smiling expression
-- Keep the background completely plain and minimal
-- Use consistent, artistic pencil strokes
-- The drawing should be high quality but not overly detailed
-- Maintain a consistent style that would look good in a mobile app
-- The face should take up approximately 60-70% of the frame
-- Use natural, realistic proportions
-- Avoid any text, symbols, or decorative elements
-- The style should be similar to a professional portrait sketch
-
-The result should be a clean, centered face drawing that looks like it belongs in an astrology app.`;
+  return `Create a single head-and-shoulders portrait drawing of a ${gender} (${ethnicity} ethnicity) in the exact same house style across all generations: a graphite/sepia pencil sketch on warm cream sketchbook paper, subtle paper grain visible. Square format, centered composition, straight-on view, eyes level with the horizontal center, soft even studio lighting, neutral expression, mouth closed, small catchlights in both eyes. Delicate cross-hatching and fine line work; light construction lines can remain; gentle tonal shading, no harsh contrast. Render with varied line weight like HB/2B pencil on textured paper. Wardrobe: plain dark turtleneck, no patterns, no jewelry. Background: blank cream paper only, no props, no text, no border, no logo, no signature, no color wash—just pencil on paper. Head size fills ~70–75% of the frame with ~10% margin on all sides. Keep the palette strictly warm sepia lines on cream paper (think #6F5B4A on #EFE6D3). Consistency requirements: Always use the same: paper texture, sepia pencil palette, centered straight-on framing, dark turtleneck, neutral background, even lighting, cross-hatching technique, and margin/head-size ratio. Produce only one subject, from collarbone up, square 1:1. Ultra-clean output with no extraneous elements.`;
 } 
 
 // Smart input formatting utilities

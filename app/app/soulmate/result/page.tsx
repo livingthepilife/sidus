@@ -212,31 +212,25 @@ export default function SoulmateResultPage() {
             </div>
           </motion.div>
 
-          {/* Astrological Signs with Icons - Horizontal Layout */}
+          {/* Astrological Signs with Icons - Exact Astra Format */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex items-center justify-center space-x-6"
+            className="flex items-center justify-center space-x-8"
           >
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                <Sun className="w-4 h-4 text-white" />
-              </div>
+              <Sun className="w-4 h-4 text-gray-400" />
               <span className="text-white font-medium">{sunSign}</span>
             </div>
             
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
-                <Moon className="w-4 h-4 text-white" />
-              </div>
+              <Moon className="w-4 h-4 text-gray-400" />
               <span className="text-white font-medium">{moonSign}</span>
             </div>
             
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-teal-500 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-white" />
-              </div>
+              <TrendingUp className="w-4 h-4 text-gray-400" />
               <span className="text-white font-medium">{risingSign}</span>
             </div>
           </motion.div>
