@@ -33,8 +33,10 @@ export default function AuthCallbackPage() {
             .single()
 
           if (userStats?.astrological_info && userStats?.basic_info) {
+            // Existing user - go directly to app
             router.push('/app')
           } else {
+            // New user - start onboarding which will lead to intro
             router.push('/onboarding')
           }
         } else {

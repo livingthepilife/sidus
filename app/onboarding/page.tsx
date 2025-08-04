@@ -275,7 +275,10 @@ export default function OnboardingPage() {
       setCurrentStep(4)
       
       setTimeout(() => {
-        completeOnboarding()
+        addMessage('Archiving this chat...', 'assistant')
+        setTimeout(() => {
+          completeOnboarding()
+        }, 2500)
       }, 3000)
     }, 1000)
   }
@@ -395,16 +398,16 @@ export default function OnboardingPage() {
         onboardingCompleted: true
       }))
       
-      // Redirect to main app with a small delay to ensure data is saved
-      console.log('Onboarding completed, redirecting to /app')
+      // Redirect to intro page with a small delay to ensure data is saved
+      console.log('Onboarding completed, redirecting to /intro')
       setTimeout(() => {
-        router.push('/app')
+        router.push('/intro')
       }, 500)
     } catch (error) {
       console.error('Error completing onboarding:', error)
       // Still redirect even if there's an error
       setTimeout(() => {
-        router.push('/app')
+        router.push('/intro')
       }, 500)
     }
   }
