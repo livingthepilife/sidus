@@ -374,7 +374,8 @@ export default function OnboardingPage() {
             birth_date: onboardingData.birthday,
             birth_time: onboardingData.birthTime,
             birth_location: onboardingData.birthLocation
-          }
+          },
+          subscription_status: 'none' // Initialize with no subscription
         })
       
       if (error) {
@@ -553,15 +554,4 @@ export default function OnboardingPage() {
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isLoading}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black rounded-full p-2 hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-    </ProtectedRoute>
-  )
-} 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-black rounded-full p-2 hover:bg-gray-200 transition-colors disabled:opacity-50

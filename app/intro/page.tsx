@@ -24,9 +24,9 @@ export default function IntroPage() {
     const showMessage = (index: number) => {
       if (index >= animatedMessages.length) {
         setIsComplete(true)
-        // Auto-redirect to main app after showing all messages
+        // Auto-redirect to paywall after showing all messages
         setTimeout(() => {
-          router.push('/app')
+          router.push('/paywall')
         }, 2000)
         return
       }
@@ -46,7 +46,7 @@ export default function IntroPage() {
   }, [router])
 
   const handleSkip = () => {
-    router.push('/app')
+    router.push('/paywall')
   }
 
   return (
@@ -193,6 +193,4 @@ export default function IntroPage() {
         {/* Subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50 pointer-events-none" />
       </div>
-    </ProtectedRoute>
-  )
-}
+    </ProtectedRoute

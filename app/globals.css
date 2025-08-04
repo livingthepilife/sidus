@@ -26,6 +26,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .font-script {
+    font-family: 'Aleo', serif;
+    font-style: italic;
+    font-weight: 400;
+  }
+}
+
 @layer base {
   :root {
     --background: 240 10% 3.9%;
@@ -516,11 +524,3 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-} 

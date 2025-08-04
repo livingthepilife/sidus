@@ -25,19 +25,24 @@ export default function AuthCallbackPage() {
         if (data.session) {
           setStatus('success')
           
-          // Check if user needs onboarding by looking for user_stats
+          // Check user's onboarding and subscription status
           const { data: userStats } = await supabase
             .from('user_stats')
-            .select('astrological_info, basic_info')
+            .select('astrological_info, basic_info, subscription_status')
             .eq('user_id', data.session.user.id)
             .single()
 
-          if (userStats?.astrological_info && userStats?.basic_info) {
-            // Existing user - go directly to app
-            router.push('/app')
-          } else {
-            // New user - start onboarding which will lead to intro
+          console.log('User stats:', userStats)
+
+          if (!userStats?.astrological_info || !userStats?.basic_info) {
+            // New user - start onboarding which will lead to intro then paywall
             router.push('/onboarding')
+          } else if (!userStats?.subscription_status || userStats.subscription_status === 'none') {
+            // User completed onboarding but hasn't subscribed - go to paywall
+            router.push('/paywall')
+          } else {
+            // User has active subscription - go to app
+            router.push('/app')
           }
         } else {
           // No session, redirect to login
