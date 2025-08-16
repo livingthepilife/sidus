@@ -160,7 +160,8 @@ export default function MainApp() {
           throw new Error('Failed to load user data')
         }
 
-        if (data && data.astrological_info && data.basic_info) {
+        if (data) {
+
           // Check subscription status
           if (!data.subscription_status || data.subscription_status === 'none') {
             console.log('User has no active subscription, redirecting to paywall')
@@ -168,18 +169,27 @@ export default function MainApp() {
             return
           }
 
-          const userData = {
-            userId: data.user_id,
-            name: data.basic_info.first_name,
-            birthday: data.basic_info.birth_date,
-            birthTime: data.basic_info.birth_time,
-            birthLocation: data.basic_info.birth_location,
-            zodiacSign: data.astrological_info.sun_sign || 'Unknown',
-            moonSign: data.astrological_info.moon_sign || 'Unknown',
-            risingSign: data.astrological_info.rising_sign || 'Unknown',
-            onboardingCompleted: true,
-            subscriptionStatus: data.subscription_status
+          if (!data.basic_info.first_name || !data.basic_info.birth_date || !data.astrological_info.sun_sign || !data.astrological_info.moon_sign || !data.astrological_info.rising_sign || !data.basic_info.birth_location ) {
+            console.log(
+              "User has not completed onboarding, redirecting to onboarding"
+            );
+            console.log("User data:", data);
+            router.push("/onboarding");
+            return;
           }
+
+            const userData = {
+              userId: data.user_id,
+              name: data.basic_info.first_name,
+              birthday: data.basic_info.birth_date,
+              birthTime: data.basic_info.birth_time,
+              birthLocation: data.basic_info.birth_location,
+              zodiacSign: data.astrological_info.sun_sign || "Unknown",
+              moonSign: data.astrological_info.moon_sign || "Unknown",
+              risingSign: data.astrological_info.rising_sign || "Unknown",
+              onboardingCompleted: true,
+              subscriptionStatus: data.subscription_status,
+            };
           console.log('Loaded user data from Supabase user_stats:', userData)
           setUser(userData)
           // Save to localStorage for faster access next time

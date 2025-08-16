@@ -256,16 +256,22 @@ export default function OnboardingPage() {
   }
 
   const handleLocationSelect = (location: string) => {
+    console.log('Location selected:', location)
+    
     // Calculate all three signs when we have complete birth information
     const bigThree = calculateBigThree(onboardingData.birthday!, onboardingData.birthTime, location)
     
-    setOnboardingData(prev => ({ 
-      ...prev, 
-      birthLocation: location,
-      zodiacSign: bigThree.sunSign,
-      moonSign: bigThree.moonSign,
-      risingSign: bigThree.risingSign
-    }))
+    setOnboardingData(prev => {
+      const updated = { 
+        ...prev, 
+        birthLocation: location,
+        zodiacSign: bigThree.sunSign,
+        moonSign: bigThree.moonSign,
+        risingSign: bigThree.risingSign
+      }
+      console.log('Updated onboarding data with location:', updated)
+      return updated
+    })
     
     setInputMode('chat')
     addMessage(location, 'user')
@@ -277,7 +283,7 @@ export default function OnboardingPage() {
       setTimeout(() => {
         addMessage('Archiving this chat...', 'assistant')
         setTimeout(() => {
-          completeOnboarding()
+          completeOnboarding(location)
         }, 2500)
       }, 3000)
     }, 1000)
@@ -320,21 +326,28 @@ export default function OnboardingPage() {
 
 
 
-  const completeOnboarding = async () => {
+  const completeOnboarding = async (passedLocation?: string) => {
     if (!user) return
     
     setIsLoading(true)
     
     try {
+      // Use passed location if provided, otherwise fall back to state
+      const birthLocation = passedLocation || onboardingData.birthLocation || ''
+      
+      console.log('Complete onboarding called with location:', passedLocation)
+      console.log('Using birth location:', birthLocation)
+      
       // Calculate the big three signs
       const bigThree = calculateBigThree(
         onboardingData.birthday || '',
         onboardingData.birthTime || '',
-        onboardingData.birthLocation || ''
+        birthLocation
       )
       
       console.log('Calculated astrological signs:', bigThree)
       console.log('Onboarding data:', onboardingData)
+      console.log('Birth location specifically:', onboardingData.birthLocation)
       
       // Test calculations to verify they're working
       const testCalculation = calculateBigThree('2000-02-01', '12:00 AM', 'Test Location')
@@ -364,19 +377,45 @@ export default function OnboardingPage() {
       }
       
       // Save onboarding data to user_stats table
-      const { error } = await supabase
+      // First check if record exists
+      const { data: existingRecord } = await supabase
         .from('user_stats')
-        .upsert({
-          user_id: user.id,
-          astrological_info: astrologicalInfo,
-          basic_info: {
-            first_name: onboardingData.name,
-            birth_date: onboardingData.birthday,
-            birth_time: onboardingData.birthTime,
-            birth_location: onboardingData.birthLocation
-          },
-          subscription_status: 'none' // Initialize with no subscription
-        })
+        .select('user_id, subscription_status')
+        .eq('user_id', user.id)
+        .single()
+
+      const basicInfoToSave = {
+        first_name: onboardingData.name,
+        birth_date: onboardingData.birthday,
+        birth_time: onboardingData.birthTime,
+        birth_location: birthLocation
+      }
+      
+      console.log('Basic info being saved to database:', basicInfoToSave)
+
+      let error
+      if (existingRecord) {
+        // Update existing record, preserving subscription status
+        const { error: updateError } = await supabase
+          .from('user_stats')
+          .update({
+            astrological_info: astrologicalInfo,
+            basic_info: basicInfoToSave
+          })
+          .eq('user_id', user.id)
+        error = updateError
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('user_stats')
+          .insert({
+            user_id: user.id,
+            astrological_info: astrologicalInfo,
+            basic_info: basicInfoToSave,
+            subscription_status: 'none'
+          })
+        error = insertError
+      }
       
       if (error) {
         console.error('Error saving onboarding data:', error)
@@ -392,7 +431,7 @@ export default function OnboardingPage() {
         name: onboardingData.name,
         birthday: onboardingData.birthday,
         birthTime: onboardingData.birthTime,
-        birthLocation: onboardingData.birthLocation,
+        birthLocation: birthLocation,
         zodiacSign: astrologicalInfo.sun_sign,
         moonSign: astrologicalInfo.moon_sign,
         risingSign: astrologicalInfo.rising_sign,
