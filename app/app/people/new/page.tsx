@@ -1,51 +1,51 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { ArrowLeft, Send, Sparkles, Calendar, MapPin } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { calculateBigThree } from '@/lib/utils'
-import { searchCities } from '@/lib/cities'
-import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import { InlineDatePicker, InlineTimePicker, InlineLocationSearch } from '@/components/ui/inline-ios-pickers'
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, Send, Sparkles, Calendar, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { calculateBigThree } from "@/lib/utils";
+import { searchCities } from "@/lib/cities";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { InlineLocationSearch } from "@/components/ui/inline-ios-pickers";
 
 // Typing animation component
 interface TypingMessageProps {
-  content: string
-  isTyping: boolean
+  content: string;
+  isTyping: boolean;
 }
 
 const TypingMessage: React.FC<TypingMessageProps> = ({ content, isTyping }) => {
-  const [displayedContent, setDisplayedContent] = useState('')
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [displayedContent, setDisplayedContent] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     if (!isTyping) {
-      setDisplayedContent(content)
-      return
+      setDisplayedContent(content);
+      return;
     }
 
     if (currentIndex < content.length) {
       const timer = setTimeout(() => {
-        setDisplayedContent(content.slice(0, currentIndex + 1))
-        setCurrentIndex(currentIndex + 1)
-      }, 30) // Adjust speed here (lower = faster)
+        setDisplayedContent(content.slice(0, currentIndex + 1));
+        setCurrentIndex(currentIndex + 1);
+      }, 30); // Adjust speed here (lower = faster)
 
-      return () => clearTimeout(timer)
+      return () => clearTimeout(timer);
     }
-  }, [content, isTyping, currentIndex])
+  }, [content, isTyping, currentIndex]);
 
   useEffect(() => {
     if (isTyping) {
-      setDisplayedContent('')
-      setCurrentIndex(0)
+      setDisplayedContent("");
+      setCurrentIndex(0);
     }
-  }, [content, isTyping])
+  }, [content, isTyping]);
 
   return (
     <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -54,304 +54,312 @@ const TypingMessage: React.FC<TypingMessageProps> = ({ content, isTyping }) => {
         <span className="animate-pulse text-purple-400">|</span>
       )}
     </p>
-  )
-}
+  );
+};
 
 interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
 }
 
 interface PersonData {
-  name?: string
-  isRomanticInterest?: boolean
-  birthday?: string
-  birthTime?: string
-  birthLocation?: string
-  sunSign?: string
-  moonSign?: string
-  risingSign?: string
+  name?: string;
+  isRomanticInterest?: boolean;
+  birthday?: string;
+  birthTime?: string;
+  birthLocation?: string;
+  sunSign?: string;
+  moonSign?: string;
+  risingSign?: string;
 }
 
 export default function NewPersonPage() {
-  const router = useRouter()
-  const { user } = useAuth()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [inputValue, setInputValue] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [personData, setPersonData] = useState<PersonData>({})
-  const [currentStep, setCurrentStep] = useState(0)
-  const [inputMode, setInputMode] = useState<'chat' | 'birthday' | 'birthTime' | 'location'>('chat')
-  const [typingMessageId, setTypingMessageId] = useState<string | null>(null)
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const router = useRouter();
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [personData, setPersonData] = useState<PersonData>({});
+  const [currentStep, setCurrentStep] = useState(0);
+  const [inputMode, setInputMode] = useState<
+    "chat" | "birthday" | "birthTime" | "location"
+  >("chat");
+  const [typingMessageId, setTypingMessageId] = useState<string | null>(null);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'end'
-      })
+      messagesEndRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (messages.length > 0) {
-      const timer = setTimeout(scrollToBottom, 100)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(scrollToBottom, 100);
+      return () => clearTimeout(timer);
     }
-  }, [messages, scrollToBottom])
+  }, [messages, scrollToBottom]);
 
   // Auto-scroll when buttons appear
   useEffect(() => {
-    if (inputMode === 'birthTime' && currentStep === 3) {
-      const timer = setTimeout(scrollToBottom, 300)
-      return () => clearTimeout(timer)
+    if (inputMode === "birthTime" && currentStep === 3) {
+      const timer = setTimeout(scrollToBottom, 300);
+      return () => clearTimeout(timer);
     }
-  }, [inputMode, currentStep, scrollToBottom])
+  }, [inputMode, currentStep, scrollToBottom]);
 
   useEffect(() => {
-    if (inputMode === 'location' && currentStep === 4) {
-      const timer = setTimeout(scrollToBottom, 300)
-      return () => clearTimeout(timer)
+    if (inputMode === "location" && currentStep === 4) {
+      const timer = setTimeout(scrollToBottom, 300);
+      return () => clearTimeout(timer);
     }
-  }, [inputMode, currentStep, scrollToBottom])
+  }, [inputMode, currentStep, scrollToBottom]);
 
   useEffect(() => {
     // Initialize with welcome message
     const welcomeMessage: Message = {
-      id: '1',
-      role: 'assistant',
+      id: "1",
+      role: "assistant",
       content: "What's their name?",
-      timestamp: new Date()
-    }
-    setMessages([welcomeMessage])
-    
+      timestamp: new Date(),
+    };
+    setMessages([welcomeMessage]);
+
     // Trigger typing animation for initial message
-    setTypingMessageId('1')
-    const typingDuration = welcomeMessage.content.length * 30 + 500
+    setTypingMessageId("1");
+    const typingDuration = welcomeMessage.content.length * 30 + 500;
     setTimeout(() => {
-      setTypingMessageId(null)
-    }, typingDuration)
-  }, [])
+      setTypingMessageId(null);
+    }, typingDuration);
+  }, []);
 
-
-
-  const addMessage = (content: string, role: 'user' | 'assistant') => {
+  const addMessage = (content: string, role: "user" | "assistant") => {
     const newMessage: Message = {
       id: Date.now().toString(),
       role,
       content,
-      timestamp: new Date()
-    }
-    setMessages(prev => [...prev, newMessage])
-    
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, newMessage]);
+
     // Trigger typing animation for assistant messages
-    if (role === 'assistant') {
-      setTypingMessageId(newMessage.id)
-      
+    if (role === "assistant") {
+      setTypingMessageId(newMessage.id);
+
       // Stop typing animation after the content length * typing speed + buffer
-      const typingDuration = content.length * 30 + 500
+      const typingDuration = content.length * 30 + 500;
       setTimeout(() => {
-        setTypingMessageId(null)
-      }, typingDuration)
+        setTypingMessageId(null);
+      }, typingDuration);
     }
-  }
+  };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return
+    if (!inputValue.trim() || isLoading) return;
 
-    const userMessage = inputValue.trim()
-    addMessage(userMessage, 'user')
-    setInputValue('')
-    setIsLoading(true)
+    const userMessage = inputValue.trim();
+    addMessage(userMessage, "user");
+    setInputValue("");
+    setIsLoading(true);
 
     try {
-      await processUserResponse(userMessage)
+      await processUserResponse(userMessage);
     } catch (error) {
-      console.error('Error processing message:', error)
-      addMessage("I'm experiencing cosmic interference. Could you please try again?", 'assistant')
+      console.error("Error processing message:", error);
+      addMessage(
+        "I'm experiencing cosmic interference. Could you please try again?",
+        "assistant"
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDateSelect = (date: string) => {
-    // Convert MM/DD/YYYY to YYYY-MM-DD for storage
-    const [month, day, year] = date.split('/')
-    const birthday = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
-    
-    setPersonData(prev => ({ 
-      ...prev, 
-      birthday
-    }))
-    
+    // Native date input already provides YYYY-MM-DD format
+    setPersonData((prev) => ({
+      ...prev,
+      birthday: date,
+    }));
+
     // Don't immediately proceed - wait for user interaction
-  }
+  };
 
   const handleDateConfirm = () => {
-    if (!personData.birthday) return
-    
-    // Convert back to display format
-    const date = new Date(personData.birthday)
-    const displayDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`
-    
-    setInputMode('chat')
-    addMessage(displayDate, 'user')
-    
+    if (!personData.birthday) return;
+
+    // Convert to display format for chat
+    const date = new Date(personData.birthday);
+    const displayDate = `${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date
+      .getDate()
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+
+    setInputMode("chat");
+    addMessage(displayDate, "user");
+
     setTimeout(() => {
-      addMessage(`Do you know their exact time of birth?`, 'assistant')
-      setCurrentStep(3)
+      addMessage(`Do you know their exact time of birth?`, "assistant");
+      setCurrentStep(3);
       setTimeout(() => {
-        setInputMode('birthTime')
-      }, 1000)
-    }, 1000)
-  }
+        setInputMode("birthTime");
+      }, 1000);
+    }, 1000);
+  };
 
   const handleTimeSelect = (time: string) => {
-    setPersonData(prev => ({ 
-      ...prev, 
-      birthTime: time
-    }))
-    
+    setPersonData((prev) => ({
+      ...prev,
+      birthTime: time,
+    }));
+
     // Don't immediately proceed - wait for user interaction
-  }
+  };
 
   const handleTimeConfirm = () => {
-    if (!personData.birthTime) return
-    
-    setInputMode('chat')
-    addMessage(personData.birthTime, 'user')
-    
+    if (!personData.birthTime) return;
+
+    setInputMode("chat");
+    addMessage(personData.birthTime, "user");
+
     setTimeout(() => {
-      addMessage(`Do you know their birth location?`, 'assistant')
-      setCurrentStep(4)
+      addMessage(`Do you know their birth location?`, "assistant");
+      setCurrentStep(4);
       setTimeout(() => {
-        setInputMode('location')
-      }, 1000)
-    }, 1000)
-  }
+        setInputMode("location");
+      }, 1000);
+    }, 1000);
+  };
 
   const handleTimeSkip = () => {
-    setPersonData(prev => ({ 
-      ...prev, 
-      birthTime: 'Unknown'
-    }))
-    
-    setInputMode('chat')
-    addMessage('Unknown', 'user')
-    
+    setPersonData((prev) => ({
+      ...prev,
+      birthTime: "Unknown",
+    }));
+
+    setInputMode("chat");
+    addMessage("Unknown", "user");
+
     setTimeout(() => {
-      addMessage(`Do you know their birth location?`, 'assistant')
-      setCurrentStep(4)
+      addMessage(`Do you know their birth location?`, "assistant");
+      setCurrentStep(4);
       setTimeout(() => {
-        setInputMode('location')
-      }, 1000)
-    }, 1000)
-  }
+        setInputMode("location");
+      }, 1000);
+    }, 1000);
+  };
 
   const handleLocationSelect = (location: string) => {
-    setPersonData(prev => ({ 
-      ...prev, 
-      birthLocation: location
-    }))
-    
-    setInputMode('chat')
-    addMessage(location, 'user')
-    
+    setPersonData((prev) => ({
+      ...prev,
+      birthLocation: location,
+    }));
+
+    setInputMode("chat");
+    addMessage(location, "user");
+
     setTimeout(() => {
-      addMessage(`Great! I made a profile for ${personData.name}, go check it out!`, 'assistant')
-      setCurrentStep(5)
-      
+      addMessage(
+        `Great! I made a profile for ${personData.name}, go check it out!`,
+        "assistant"
+      );
+      setCurrentStep(5);
+
       setTimeout(() => {
-        savePerson()
-      }, 2000)
-    }, 1000)
-  }
+        savePerson();
+      }, 2000);
+    }, 1000);
+  };
 
   const processUserResponse = async (userInput: string) => {
-    let response = ''
-    let nextStep = currentStep
+    let response = "";
+    let nextStep = currentStep;
 
     switch (currentStep) {
       case 0: // Getting name
-        setPersonData(prev => ({ ...prev, name: userInput }))
-        response = `Is this a romantic interest?`
-        nextStep = 1
-        break
+        setPersonData((prev) => ({ ...prev, name: userInput }));
+        response = `Is this a romantic interest?`;
+        nextStep = 1;
+        break;
 
       case 1: // Getting romantic interest
-        const isRomantic = userInput.toLowerCase().includes('yes')
-        setPersonData(prev => ({ ...prev, isRomanticInterest: isRomantic }))
-        response = `What's their birthday?`
-        nextStep = 2
-        
+        const isRomantic = userInput.toLowerCase().includes("yes");
+        setPersonData((prev) => ({ ...prev, isRomanticInterest: isRomantic }));
+        response = `What's their birthday?`;
+        nextStep = 2;
+
         setTimeout(() => {
-          setInputMode('birthday')
-        }, 1500)
-        break
+          setInputMode("birthday");
+        }, 1500);
+        break;
 
       default:
-        response = "Perfect! I've created their profile."
+        response = "Perfect! I've created their profile.";
         setTimeout(() => {
-          savePerson()
-        }, 2000)
-        break
+          savePerson();
+        }, 2000);
+        break;
     }
 
     setTimeout(() => {
-      addMessage(response, 'assistant')
-      setCurrentStep(nextStep)
-    }, 1000)
-  }
+      addMessage(response, "assistant");
+      setCurrentStep(nextStep);
+    }, 1000);
+  };
 
   const handleRomanticResponse = (isRomantic: boolean) => {
-    const response = isRomantic ? 'Yes' : 'No'
-    addMessage(response, 'user')
-    setPersonData(prev => ({ ...prev, isRomanticInterest: isRomantic }))
-    
+    const response = isRomantic ? "Yes" : "No";
+    addMessage(response, "user");
+    setPersonData((prev) => ({ ...prev, isRomanticInterest: isRomantic }));
+
     // Immediately change step to hide buttons
-    setCurrentStep(1.5)
-    
+    setCurrentStep(1.5);
+
     setTimeout(() => {
-      addMessage(`What's their birthday?`, 'assistant')
-      setCurrentStep(2)
+      addMessage(`What's their birthday?`, "assistant");
+      setCurrentStep(2);
       setTimeout(() => {
-        setInputMode('birthday')
-      }, 1000)
-    }, 1000)
-  }
+        setInputMode("birthday");
+      }, 1000);
+    }, 1000);
+  };
 
   const shouldShowInput = () => {
-    return inputMode === 'chat' && (currentStep === 0 || currentStep === 1)
-  }
+    return inputMode === "chat" && (currentStep === 0 || currentStep === 1);
+  };
 
   const shouldShowLocationInput = () => {
-    return inputMode === 'location' && currentStep === 4
-  }
+    return inputMode === "location" && currentStep === 4;
+  };
 
   const savePerson = async () => {
-    if (!user || !personData.name) return
-    
-    setIsLoading(true)
-    
+    if (!user || !personData.name) return;
+
+    setIsLoading(true);
+
     try {
       // Calculate astrological information if we have enough data
-      let astrological_info = {}
+      let astrological_info = {};
       if (personData.birthday) {
         const bigThree = calculateBigThree(
           personData.birthday,
           personData.birthTime || undefined,
           personData.birthLocation || undefined
-        )
-        
+        );
+
         astrological_info = {
           sun_sign: bigThree.sunSign,
           moon_sign: bigThree.moonSign,
-          rising_sign: bigThree.risingSign
-        }
+          rising_sign: bigThree.risingSign,
+        };
       }
 
       // Prepare personal information
@@ -360,56 +368,59 @@ export default function NewPersonPage() {
         birth_date: personData.birthday || null,
         birth_time: personData.birthTime || null,
         birth_location: personData.birthLocation || null,
-        relationship_type: personData.isRomanticInterest ? 'romantic_interest' : 'friend'
-      }
+        relationship_type: personData.isRomanticInterest
+          ? "romantic_interest"
+          : "friend",
+      };
 
       // Get the correct user ID - use auth user ID directly
-      const userId = user.id
+      const userId = user.id;
 
-      console.log('Saving person with user_id:', userId)
-      console.log('Personal info:', personal_info)
-      console.log('Astrological info:', astrological_info)
+      console.log("Saving person with user_id:", userId);
+      console.log("Personal info:", personal_info);
+      console.log("Astrological info:", astrological_info);
 
       // Save to people table via API
-      const response = await fetch('/api/people', {
-        method: 'POST',
+      const response = await fetch("/api/people", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           user_id: userId,
           personal_info,
-          astrological_info
-        })
-      })
+          astrological_info,
+        }),
+      });
 
-      const data = await response.json()
-      
+      const data = await response.json();
+
       if (data.success) {
-        console.log('Person created successfully:', data.data)
+        console.log("Person created successfully:", data.data);
         // Redirect back to main app after successful save
         setTimeout(() => {
-          router.push('/app')
-        }, 1000)
+          router.push("/app");
+        }, 1000);
       } else {
-        throw new Error(data.error || 'Failed to save person')
+        throw new Error(data.error || "Failed to save person");
       }
-      
     } catch (error) {
-      console.error('Error saving person:', error)
-      addMessage("There was an error creating their profile. Please try again.", 'assistant')
+      console.error("Error saving person:", error);
+      addMessage(
+        "There was an error creating their profile. Please try again.",
+        "assistant"
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
-
+  };
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-black text-white">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
-          <button 
+          <button
             onClick={() => router.back()}
             className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           >
@@ -425,21 +436,25 @@ export default function NewPersonPage() {
             <div className="space-y-4 py-4">
               {messages.map((message) => (
                 <div key={message.id} className="space-y-2">
-                  {message.role === 'assistant' && (
+                  {message.role === "assistant" && (
                     <div className="flex items-start space-x-2">
                       <div className="text-sm text-gray-400">Astra:</div>
                     </div>
                   )}
-                  {message.role === 'user' && (
+                  {message.role === "user" && (
                     <div className="flex items-start space-x-2">
                       <div className="text-sm text-gray-400">You:</div>
                     </div>
                   )}
-                  <div className={`${message.role === 'user' ? 'text-white' : 'text-gray-300'}`}>
-                    {message.role === 'assistant' ? (
-                      <TypingMessage 
-                        content={message.content} 
-                        isTyping={typingMessageId === message.id} 
+                  <div
+                    className={`${
+                      message.role === "user" ? "text-white" : "text-gray-300"
+                    }`}
+                  >
+                    {message.role === "assistant" ? (
+                      <TypingMessage
+                        content={message.content}
+                        isTyping={typingMessageId === message.id}
                       />
                     ) : (
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -449,38 +464,41 @@ export default function NewPersonPage() {
                   </div>
                 </div>
               ))}
-              
+
               <AnimatePresence>
-                {currentStep === 1 && inputMode === 'chat' && (
+                {currentStep === 1 && inputMode === "chat" && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     className="flex space-x-4"
                   >
-                  <Button 
-                    onClick={() => handleRomanticResponse(true)}
-                    className="bg-white text-black hover:bg-gray-200 rounded-full px-8 py-3"
-                  >
-                    Yes
-                  </Button>
-                  <Button 
-                    onClick={() => handleRomanticResponse(false)}
-                    className="bg-transparent border border-gray-600 text-white hover:bg-gray-800 rounded-full px-8 py-3"
-                  >
-                    No
-                  </Button>
+                    <Button
+                      onClick={() => handleRomanticResponse(true)}
+                      className="bg-white text-black hover:bg-gray-200 rounded-full px-8 py-3"
+                    >
+                      Yes
+                    </Button>
+                    <Button
+                      onClick={() => handleRomanticResponse(false)}
+                      className="bg-transparent border border-gray-600 text-white hover:bg-gray-800 rounded-full px-8 py-3"
+                    >
+                      No
+                    </Button>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Inline Birthday Selection */}
-              {inputMode === 'birthday' && currentStep === 2 && (
+              {/* Native Birthday Selection */}
+              {inputMode === "birthday" && currentStep === 2 && (
                 <div className="space-y-4">
-                  <InlineDatePicker
-                    onDateSelect={handleDateSelect}
+                  <input
+                    type="date"
+                    value={personData.birthday || ""}
+                    onChange={(e) => handleDateSelect(e.target.value)}
+                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-3 border border-gray-700 focus:border-gray-500 outline-none [color-scheme:dark]"
                   />
-                  <Button 
+                  <Button
                     onClick={handleDateConfirm}
                     disabled={!personData.birthday}
                     className="w-full bg-white text-black hover:bg-gray-200 rounded-full py-3 disabled:opacity-50"
@@ -490,21 +508,24 @@ export default function NewPersonPage() {
                 </div>
               )}
 
-              {/* Inline Birth Time Selection */}
-              {inputMode === 'birthTime' && currentStep === 3 && (
+              {/* Native Birth Time Selection */}
+              {inputMode === "birthTime" && currentStep === 3 && (
                 <div className="space-y-4">
-                  <InlineTimePicker
-                    onTimeSelect={handleTimeSelect}
+                  <input
+                    type="time"
+                    value={personData.birthTime || ""}
+                    onChange={(e) => handleTimeSelect(e.target.value)}
+                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-3 border border-gray-700 focus:border-gray-500 outline-none [color-scheme:dark]"
                   />
                   <div className="flex space-x-3">
-                    <Button 
+                    <Button
                       onClick={handleTimeConfirm}
                       disabled={!personData.birthTime}
                       className="flex-1 bg-white text-black hover:bg-gray-200 rounded-full py-3 disabled:opacity-50"
                     >
                       Continue
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleTimeSkip}
                       className="flex-1 bg-gray-700 hover:bg-gray-600 text-white rounded-full py-3"
                     >
@@ -515,14 +536,14 @@ export default function NewPersonPage() {
               )}
 
               {/* Inline Location Selection */}
-              {inputMode === 'location' && currentStep === 4 && (
+              {inputMode === "location" && currentStep === 4 && (
                 <InlineLocationSearch
                   onLocationSelect={handleLocationSelect}
                   searchCities={searchCities}
                   placeholder="Search for their birth location..."
                 />
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
@@ -536,8 +557,10 @@ export default function NewPersonPage() {
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder={currentStep === 0 ? 'Their name' : 'Type your response...'}
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                placeholder={
+                  currentStep === 0 ? "Their name" : "Type your response..."
+                }
                 className="w-full bg-gray-800 text-white rounded-full pl-4 pr-12 py-3 border border-gray-700 placeholder-gray-400 focus:border-gray-500 outline-none"
                 disabled={isLoading}
               />
@@ -553,5 +576,5 @@ export default function NewPersonPage() {
         )}
       </div>
     </ProtectedRoute>
-  )
-} 
+  );
+}
