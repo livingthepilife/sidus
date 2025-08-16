@@ -146,24 +146,7 @@ export default function MainApp() {
 
       try {
         setError(null)
-        
-        // First try to get user data from localStorage
-        const userData = localStorage.getItem('sidusUser')
-        if (userData) {
-          const parsedUser = JSON.parse(userData)
-          console.log('Loaded user data from localStorage:', parsedUser)
-          if (parsedUser.onboardingCompleted) {
-            // Check subscription status from localStorage data
-            if (!parsedUser.subscriptionStatus || parsedUser.subscriptionStatus === 'none') {
-              console.log('User has no active subscription (from localStorage), redirecting to paywall')
-              router.push('/paywall')
-              return
-            }
-            setUser(parsedUser)
-            setLoadingUser(false)
-            return
-          }
-        }
+      
 
         // If no localStorage data, try to get from Supabase user_stats
         const { data, error } = await supabase
