@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
     console.log("Using service role key:", isUsingServiceRole);
 
     console.log("Checking authentication...");
+    
+    // Try to get user from session first
     const {
       data: { user },
       error: authError,
@@ -67,6 +69,7 @@ export async function POST(request: NextRequest) {
 
     let finalUserId = user?.id;
 
+    // If no session user, try to get from Authorization header
     if (!finalUserId) {
       const authHeader = request.headers.get("authorization");
       if (authHeader?.startsWith("Bearer ")) {
@@ -84,14 +87,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // If still no user ID, try to extract from request body or cookies
     if (!finalUserId) {
-      console.log(
-        "No authenticated user found, using temporary ID for testing"
+      console.log("No authenticated user found via standard methods");
+      // For development/testing, we'll return an error instead of using temp user
+      return NextResponse.json(
+        { error: "Authentication required. Please log in to generate a soulmate." },
+        { status: 401 }
       );
-      finalUserId = "temp-user-" + Date.now();
     }
 
-    console.log("Using user ID:", finalUserId);
+    console.log("Using authenticated user ID:", finalUserId);
 
     const { data: recentSoulmate, error: checkError } = await supabase
       .from("soulmates")
@@ -172,55 +178,57 @@ export async function POST(request: NextRequest) {
     const shortDescription = `Your passion meets their fiery ${soulmateSign} spirit, igniting thrilling adventures, while your shared ${risingSign} rising fosters an intense emotional bond, creating an unbreakable connection.`;
 
     // Store the soulmate directly in Supabase
-    console.log("Storing soulmate in database...");
+    console.log("Storing soulmate in database for user:", finalUserId);
 
-    let soulmateData = null;
-    let insertError = null;
-
-    if (!finalUserId.startsWith("temp-user-")) {
-      try {
-        const { data, error } = await supabase
-          .from("soulmates")
-          .insert({
-            user_id: finalUserId,
-            personal_info: {
-              name: "Your Soulmate",
-              gender: genderPreference,
-              ethnicity: racePreference,
-            },
-            astrological_info: {
-              sun_sign: sunSign,
-              moon_sign: moonSign,
-              rising_sign: risingSign,
-              soulmate_sign: soulmateSign,
-            },
-            compatibility_info: {
-              compatibility_score: compatibilityScore,
-              analysis: analysis,
-              short_description: shortDescription,
-            },
-            image_url: cdnImageUrl,
-          })
-          .select()
-          .single();
-
-        soulmateData = data;
-        insertError = error;
-      } catch (dbError) {
-        console.log(
-          "Database storage failed, but continuing with generation..."
-        );
-        console.error("Database error:", dbError);
-      }
+    try {
+      const { data: soulmateData, error: insertError } = await supabase
+        .from("soulmates")
+        .insert({
+          user_id: finalUserId,
+          personal_info: {
+            name: "Your Soulmate",
+            gender: genderPreference,
+            ethnicity: racePreference,
+          },
+          astrological_info: {
+            sun_sign: sunSign,
+            moon_sign: moonSign,
+            rising_sign: risingSign,
+            soulmate_sign: soulmateSign,
+          },
+          compatibility_info: {
+            compatibility_score: compatibilityScore,
+            analysis: analysis,
+            short_description: shortDescription,
+          },
+          image_url: cdnImageUrl,
+        })
+        .select()
+        .single();
 
       if (insertError) {
         console.error("Error inserting soulmate:", insertError);
-        console.log("Continuing without database storage for testing...");
+        console.error("Error details:", {
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint
+        });
+        
+        // Return error if database storage fails
+        return NextResponse.json(
+          { error: `Failed to store soulmate: ${insertError.message}` },
+          { status: 500 }
+        );
       } else {
         console.log("Soulmate stored successfully:", soulmateData);
       }
-    } else {
-      console.log("Skipping database storage for temporary user");
+    } catch (dbError) {
+      console.error("Database storage failed:", dbError);
+      return NextResponse.json(
+        { error: "Failed to store soulmate in database" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
@@ -256,6 +264,62 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
-  return NextResponse.json({ message: "Soulmate API is working" });
+export async function GET(request: NextRequest) {
+  try {
+    console.log("=== GET SOULMATE API CALLED ===");
+    
+    // Get user authentication
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    
+    if (!user || authError) {
+      console.log("No authenticated user found for GET request");
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    console.log("Fetching soulmate for user:", user.id);
+
+    // Get the user's most recent soulmate
+    const { data: soulmateData, error: fetchError } = await supabase
+      .from("soulmates")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
+        // No soulmate found
+        console.log("No soulmate found for user");
+        return NextResponse.json({
+          success: true,
+          data: null
+        });
+      }
+      console.error("Error fetching soulmate:", fetchError);
+      return NextResponse.json(
+        { error: "Failed to fetch soulmate" },
+        { status: 500 }
+      );
+    }
+
+    console.log("Found soulmate:", soulmateData);
+    return NextResponse.json({
+      success: true,
+      data: soulmateData
+    });
+
+  } catch (error) {
+    console.error("Soulmate fetch error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch soulmate" },
+      { status: 500 }
+    );
+  }
 }

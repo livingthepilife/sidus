@@ -48,6 +48,7 @@ interface ChatFeature {
 function PersonCard({ person }: { person: Person }) {
   const getRelationshipColor = (type?: string) => {
     switch (type) {
+      case 'soulmate': return 'from-purple-500 to-pink-600'
       case 'romantic_interest': return 'from-pink-500 to-rose-600'
       case 'friend': return 'from-blue-500 to-cyan-600'
       case 'family': return 'from-green-500 to-emerald-600'
@@ -57,6 +58,7 @@ function PersonCard({ person }: { person: Person }) {
 
   const getRelationshipIcon = (type?: string) => {
     switch (type) {
+      case 'soulmate': return <Sparkles className="w-4 h-4" />
       case 'romantic_interest': return <Heart className="w-4 h-4" />
       case 'friend': return <Users className="w-4 h-4" />
       case 'family': return <Users className="w-4 h-4" />
@@ -72,10 +74,18 @@ function PersonCard({ person }: { person: Person }) {
       className="bg-gradient-to-r from-gray-800/40 to-gray-700/40 rounded-2xl p-3 sm:p-4 border border-gray-700/50 shadow-lg"
     >
       <div className="flex items-center space-x-3 sm:space-x-4">
-        <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${getRelationshipColor(person.personal_info.relationship_type)} rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
-          <span className="text-white font-bold text-sm sm:text-lg">
-            {person.personal_info.name.charAt(0).toUpperCase()}
-          </span>
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl shadow-lg flex-shrink-0 overflow-hidden ${person.image_url ? '' : `bg-gradient-to-r ${getRelationshipColor(person.personal_info.relationship_type)} flex items-center justify-center`}`}>
+          {person.image_url ? (
+            <img 
+              src={person.image_url} 
+              alt={person.personal_info.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-white font-bold text-sm sm:text-lg">
+              {person.personal_info.name.charAt(0).toUpperCase()}
+            </span>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 flex-wrap">
@@ -90,6 +100,18 @@ function PersonCard({ person }: { person: Person }) {
             )}
           </div>
           
+          {/* Compatibility Score for Soulmates */}
+          {person.is_soulmate && person.compatibility_info?.compatibility_score && (
+            <div className="flex items-center space-x-2 mt-2">
+              <div className="flex items-center space-x-1 bg-purple-600/20 px-2 py-1 rounded-lg">
+                <Heart className="w-3 h-3 text-purple-400" />
+                <span className="text-xs font-medium text-purple-300">
+                  {person.compatibility_info.compatibility_score}% Compatible
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Astrological info */}
           {person.astrological_info.sun_sign && (
             <div className="flex items-center flex-wrap gap-2 mt-2">
@@ -230,6 +252,48 @@ export default function MainApp() {
     }
   }, [authUser, activeTab])
 
+  // Force refresh people list (useful after soulmate generation)
+  const forceRefreshPeople = async () => {
+    console.log('Force refreshing people list...')
+    await loadPeople()
+  }
+
+  // Listen for soulmate generation events to refresh people list
+  useEffect(() => {
+    const handleSoulmateGenerated = () => {
+      console.log('Soulmate generated event received, refreshing people...')
+      forceRefreshPeople()
+    }
+
+    // Listen for custom events or localStorage changes that indicate soulmate generation
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'soulmateGenerated' && e.newValue) {
+        handleSoulmateGenerated()
+        // Clear the flag
+        localStorage.removeItem('soulmateGenerated')
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    
+    // Also check periodically when on people tab (in case same-tab generation)
+    let refreshInterval: NodeJS.Timeout | null = null
+    if (activeTab === 'people') {
+      refreshInterval = setInterval(() => {
+        const flag = localStorage.getItem('soulmateGenerated')
+        if (flag) {
+          handleSoulmateGenerated()
+          localStorage.removeItem('soulmateGenerated')
+        }
+      }, 2000) // Check every 2 seconds
+    }
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      if (refreshInterval) clearInterval(refreshInterval)
+    }
+  }, [activeTab])
+
   const loadPeople = async () => {
     if (!authUser) return
     
@@ -329,7 +393,44 @@ export default function MainApp() {
     }
   ]
 
-  const handleChatFeatureClick = (chatType: string) => {
+  const handleChatFeatureClick = async (chatType: string) => {
+    // Special handling for soulmate feature - check for existing soulmate
+    if (chatType === 'soulmate') {
+      try {
+        console.log('Checking for existing soulmate from main app...')
+        const response = await fetch('/api/soulmate', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        const data = await response.json()
+        console.log('Soulmate check result:', data)
+        
+        if (data.success && data.data) {
+          // User has a soulmate, redirect directly to results page
+          console.log('Found existing soulmate, redirecting to results...')
+          const soulmate = data.data
+          const imageUrl = soulmate.image_url
+          const compatibility = soulmate.compatibility_info.compatibility_score
+          const soulmateSign = soulmate.astrological_info.soulmate_sign || soulmate.astrological_info.sun_sign
+          const analysis = soulmate.compatibility_info.analysis
+          const sunSign = soulmate.astrological_info.sun_sign
+          const moonSign = soulmate.astrological_info.moon_sign
+          const risingSign = soulmate.astrological_info.rising_sign
+          
+          const shortDescription = soulmate.compatibility_info.short_description || ''
+          router.push(`/app/soulmate/result?imageUrl=${encodeURIComponent(imageUrl)}&compatibility=${compatibility}&soulmateSign=${encodeURIComponent(soulmateSign)}&analysis=${encodeURIComponent(analysis)}&sunSign=${encodeURIComponent(sunSign)}&moonSign=${encodeURIComponent(moonSign)}&risingSign=${encodeURIComponent(risingSign)}&shortDescription=${encodeURIComponent(shortDescription)}`)
+          return
+        }
+      } catch (error) {
+        console.error('Error checking for existing soulmate:', error)
+        // Continue to chat if there's an error
+      }
+    }
+    
+    // Default behavior - go to chat
     router.push(`/app/chat?type=${chatType}`)
   }
 
@@ -460,10 +561,10 @@ export default function MainApp() {
         </div>
       </div>
 
-      <div className="w-full max-w-6xl mx-auto flex-1 flex flex-col min-h-0">
-        <div className="max-w-full sm:max-w-md mx-auto flex-1 flex flex-col px-4 sm:px-0">
+      <div className="w-full max-w-6xl mx-auto flex-shrink-0">
+        <div className="max-w-full sm:max-w-md mx-auto px-4 sm:px-0">
           {/* Tab Navigation */}
-          <div className="flex justify-center items-center space-x-12 mt-6 mb-6 flex-shrink-0">
+          <div className="flex justify-center items-center space-x-12 mt-6 mb-6">
             <button
               onClick={() => setActiveTab('chat')}
               className={`p-4 rounded-full transition-all duration-300 touch-target ${
@@ -485,12 +586,16 @@ export default function MainApp() {
               <Users className="w-6 h-6 sm:w-7 sm:h-7" />
             </button>
           </div>
+        </div>
+      </div>
 
-          {/* Chat Tab Content */}
-          {activeTab === 'chat' && (
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 mobile-scroll overflow-y-auto pb-4 mobile-safe-area">
-                <div className="space-y-3 mt-4">
+      {/* Full width scrollable content */}
+      <div className="flex-1 min-h-0">
+        {/* Chat Tab Content */}
+        {activeTab === 'chat' && (
+          <div className="h-full mobile-scroll custom-scrollbar overflow-y-auto pb-4 mobile-safe-area max-h-[calc(100vh-200px)] sm:max-h-[calc(100vh-180px)]">
+            <div className="max-w-full sm:max-w-md mx-auto px-4 sm:px-0">
+              <div className="space-y-3 mt-4">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -533,10 +638,12 @@ export default function MainApp() {
             </div>
           )}
 
-          {/* People Tab Content */}
-          {activeTab === 'people' && (
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 mobile-scroll overflow-y-auto pb-4 mobile-safe-area">
+        {/* People Tab Content */}
+        {activeTab === 'people' && (
+          <>
+            {/* Fixed header and new person button */}
+            <div className="flex-shrink-0">
+              <div className="max-w-full sm:max-w-md mx-auto px-4 sm:px-0">
                 <div className="space-y-4 mt-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-base sm:text-lg font-semibold text-white">
@@ -565,6 +672,14 @@ export default function MainApp() {
                       </div>
                     </Button>
                   </motion.div>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable people list */}
+            <div className="flex-1 mobile-scroll custom-scrollbar overflow-y-auto pb-4 mobile-safe-area max-h-[calc(100vh-340px)] sm:max-h-[calc(100vh-320px)]">
+              <div className="max-w-full sm:max-w-md mx-auto px-4 sm:px-0">
+                <div className="space-y-4 mt-4">
 
                   {/* Current User Profile */}
                   <motion.div
@@ -656,8 +771,8 @@ export default function MainApp() {
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
     </ProtectedRoute>
