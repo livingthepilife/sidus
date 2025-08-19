@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import cities from 'cities.json';
+
+// Lazy load cities data to prevent blocking startup
+let citiesData: any = null;
+
+async function getCities() {
+  if (!citiesData) {
+    const citiesModule = await import('cities.json');
+    citiesData = citiesModule.default;
+  }
+  return citiesData;
+}
 
 interface City {
   name: string;
@@ -119,6 +129,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const lowercaseQuery = query.toLowerCase().trim();
+    
+    // Get cities data lazily
+    const cities = await getCities();
     
     // Search through all cities
     const matchingCities = cities
