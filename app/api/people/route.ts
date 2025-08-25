@@ -110,64 +110,27 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log('Fetching people and soulmates...')
+    console.log('Fetching people...')
 
-    // Fetch regular people
-    const { data: peopleData, error: peopleError } = await supabase
+    const { data, error } = await supabase
       .from('people')
       .select('*')
       .eq('user_id', user_id)
       .order('created_at', { ascending: false })
 
-    if (peopleError) {
-      console.error('Database error fetching people:', peopleError)
+    if (error) {
+      console.error('Database error:', error)
       return NextResponse.json(
         { error: 'Failed to fetch people' },
         { status: 500 }
       )
     }
 
-    // Fetch soulmates
-    const { data: soulmatesData, error: soulmatesError } = await supabase
-      .from('soulmates')
-      .select('*')
-      .eq('user_id', user_id)
-      .order('created_at', { ascending: false })
-
-    if (soulmatesError) {
-      console.error('Database error fetching soulmates:', soulmatesError)
-      return NextResponse.json(
-        { error: 'Failed to fetch soulmates' },
-        { status: 500 }
-      )
-    }
-
-    console.log('Successfully fetched people:', peopleData)
-    console.log('Successfully fetched soulmates:', soulmatesData)
-
-    // Transform soulmates data to match people format
-    const transformedSoulmates = soulmatesData?.map(soulmate => ({
-      id: soulmate.id,
-      user_id: soulmate.user_id,
-      personal_info: {
-        ...soulmate.personal_info,
-        relationship_type: 'soulmate' // Add relationship type to identify soulmates
-      },
-      astrological_info: soulmate.astrological_info,
-      compatibility_info: soulmate.compatibility_info, // Include compatibility info for soulmates
-      image_url: soulmate.image_url, // Include image URL for soulmates
-      created_at: soulmate.created_at,
-      updated_at: soulmate.updated_at,
-      is_soulmate: true // Flag to identify this as a soulmate
-    })) || []
-
-    // Combine people and soulmates, sort by creation date
-    const allPeople = [...(peopleData || []), ...transformedSoulmates]
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    console.log('Successfully fetched people:', data)
 
     return NextResponse.json({
       success: true,
-      data: allPeople
+      data
     })
 
   } catch (error) {

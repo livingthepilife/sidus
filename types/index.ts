@@ -40,14 +40,6 @@ export interface Person {
   notes?: string | null;
   photo_url?: string | null;
   is_favorite?: boolean;
-  // Soulmate-specific fields
-  compatibility_info?: {
-    compatibility_score?: number;
-    analysis?: string;
-    short_description?: string;
-  };
-  image_url?: string | null;
-  is_soulmate?: boolean;
 }
 
 export interface ChatMessage {

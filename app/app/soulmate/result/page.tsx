@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -33,14 +33,6 @@ export default function SoulmateResultPage() {
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
 
-  // Set flag to refresh people list when soulmate is viewed
-  useEffect(() => {
-    // Set a flag that indicates a soulmate has been generated/viewed
-    // This will trigger the people list refresh in the main app
-    localStorage.setItem('soulmateGenerated', 'true');
-    console.log('Soulmate result viewed - set refresh flag');
-  }, []);
-
   // Debug logging
   console.log("Soulmate Result Page - Image URL:", imageUrl);
   console.log("Soulmate Result Page - All params:", {
@@ -54,7 +46,7 @@ export default function SoulmateResultPage() {
   });
 
   const handleBack = () => {
-    router.push("/app");
+    router.push("/app/chat?type=soulmate");
   };
 
   const handleReset = async () => {

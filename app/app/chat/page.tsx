@@ -7,27 +7,13 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
-import { ArrowLeft, Send, Sparkles, Star, ArrowUp, ArrowRight } from 'lucide-react'
-import Image from 'next/image'
+import { ArrowLeft, Send, Sparkles, Star, ArrowUp } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 // Remove direct OpenAI imports - we'll use API routes instead
 import { getCompatibilityScore, generateSoulmatePrompt, getZodiacSign } from '@/lib/utils'
 import { GENDER_OPTIONS, RACE_OPTIONS } from '@/types'
+import Image from 'next/image'
 import ProtectedRoute from '@/components/ProtectedRoute'
-
-// Send Button SVG Component
-const SendButtonIcon = ({ className, fill = "currentColor" }: { className?: string, fill?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    height="24px" 
-    viewBox="0 -960 960 960" 
-    width="24px" 
-    fill={fill}
-    className={className}
-  >
-    <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"/>
-  </svg>
-)
 
 // Typing animation component
 interface TypingMessageProps {
@@ -124,8 +110,6 @@ export default function ChatPage() {
   } | null>(null)
   const [suggestedResponses, setSuggestedResponses] = useState<string[]>([])
   const [typingMessageId, setTypingMessageId] = useState<string | null>(null)
-  const [hasUserSentFirstMessage, setHasUserSentFirstMessage] = useState(false)
-  const [currentHoroscope, setCurrentHoroscope] = useState<string>('')
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -188,93 +172,12 @@ export default function ChatPage() {
     }
   }, [inputValue])
 
-  // Get today's date as string for comparison
-  const getTodayString = () => {
-    return new Date().toDateString()
-  }
-
-  // Clean up old horoscope entries (keep only last 7 days)
-  const cleanupOldHoroscopes = (userId: string) => {
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    
-    // Get all localStorage keys
-    const keysToRemove: string[] = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key && key.startsWith(`dailyHoroscope_${userId}_`)) {
-        const dateStr = key.replace(`dailyHoroscope_${userId}_`, '')
-        const entryDate = new Date(dateStr)
-        if (entryDate < sevenDaysAgo) {
-          keysToRemove.push(key)
-        }
-      }
-    }
-    
-    // Remove old entries
-    keysToRemove.forEach(key => localStorage.removeItem(key))
-  }
-
-  // Get or generate daily horoscope
-  const getDailyHoroscope = async (userData: User): Promise<string> => {
-    const today = getTodayString()
-    const storageKey = `dailyHoroscope_${userData.userId}_${today}`
-    
-    // Clean up old horoscopes
-    cleanupOldHoroscopes(userData.userId)
-    
-    // Check if we have today's horoscope in localStorage
-    const existingHoroscope = localStorage.getItem(storageKey)
-    if (existingHoroscope) {
-      console.log('Using existing horoscope for today')
-      return existingHoroscope
-    }
-
-    // Generate new horoscope for today
-    try {
-      console.log('Generating new horoscope for today')
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [
-            { 
-              role: 'user', 
-              content: `Generate a personalized daily horoscope for today (${today}) for a ${userData.zodiacSign}. Make it specific, insightful, and different from previous days. Include advice about love, career, health, or personal growth. Keep it conversational and engaging, around 3-4 sentences.`
-            }
-          ],
-          chatType: 'horoscope',
-          userContext: userData
-        })
-      })
-      
-      const data = await response.json()
-      if (data.success && data.message) {
-        // Store today's horoscope
-        localStorage.setItem(storageKey, data.message)
-        return data.message
-      } else {
-        throw new Error('Failed to generate horoscope')
-      }
-    } catch (error) {
-      console.error('Error generating daily horoscope:', error)
-      // Fallback horoscope
-      const fallbackHoroscope = `${userData.zodiacSign}, today brings new opportunities for growth and connection. Trust your intuition as you navigate the day's challenges, and remember that every experience is teaching you something valuable. Focus on nurturing your relationships and staying open to unexpected possibilities.`
-      localStorage.setItem(storageKey, fallbackHoroscope)
-      return fallbackHoroscope
-    }
-  }
-
   useEffect(() => {
     // Load user data
     const userData = localStorage.getItem('sidusUser')
     if (userData) {
       const parsedUser = JSON.parse(userData)
       setUser(parsedUser)
-      // Reset first message tracking for new chat session
-      setHasUserSentFirstMessage(false)
       initializeChat(parsedUser, chatType)
     } else {
       router.push('/')
@@ -292,9 +195,8 @@ export default function ChatPage() {
         welcomeMessage = `Hey ${userData.name}! I'm so glad you're here. As we talk, I'll keep your chart, the chart of people you share with me, and other important details you mention in mind.\n\nWhat's on your mind?`
         break
       case 'horoscope':
-        // Get today's personalized horoscope
-        welcomeMessage = await getDailyHoroscope(userData)
-        setCurrentHoroscope(welcomeMessage)
+        // Generate a personalized horoscope message for their sign
+        welcomeMessage = `${userData.zodiacSign}, financial matters require your careful attention today; analyze your budget and make informed decisions. A simple act of kindness can brighten someone's day and create a ripple effect of positivity. Embrace the power of small gestures to make a big difference.`
         break
       case 'compatibility':
         if (preset === 'soulmate') {
@@ -374,271 +276,20 @@ export default function ChatPage() {
       // For soulmate chat, show gender selection after initial message
       if (type === 'soulmate') {
         setCurrentStep('gender')
-      } else {
-        // Generate preset questions for other chat types
-        // For horoscope, wait a bit more to ensure currentHoroscope is set
-        if (type === 'horoscope') {
-          setTimeout(() => {
-            const presetQuestions = generatePresetQuestions(userData, type)
-            setSuggestedResponses(presetQuestions)
-          }, 500)
-        } else {
-          const presetQuestions = generatePresetQuestions(userData, type)
-          setSuggestedResponses(presetQuestions)
-        }
       }
     }, typingDuration)
+
+    // Generate dynamic suggestions
+    // await generateDynamicSuggestions(userData, type)
     
     // Add suggested responses for soulmate compatibility
     if (type === 'compatibility' && preset === 'soulmate') {
-      setTimeout(() => {
       setSuggestedResponses([
         'What makes us so compatible?',
         'What challenges might we face together?',
         'How can we strengthen our connection?'
       ])
-      }, typingDuration)
     }
-  }
-
-  // Generate horoscope-specific questions based on current horoscope content
-  const generateHoroscopeQuestions = (horoscopeContent: string, userSign: string): string[] => {
-    const contextualQuestions: string[] = []
-    
-    // Analyze horoscope content for keywords and generate relevant questions
-    const content = horoscopeContent.toLowerCase()
-    
-    if (content.includes('love') || content.includes('relationship') || content.includes('romance')) {
-      contextualQuestions.push('How can I improve my love life today?', 'What should I focus on in my relationships?')
-    }
-    
-    if (content.includes('career') || content.includes('work') || content.includes('professional')) {
-      contextualQuestions.push('How can I advance my career today?', 'What work opportunities should I watch for?')
-    }
-    
-    if (content.includes('health') || content.includes('wellness') || content.includes('energy')) {
-      contextualQuestions.push('How can I boost my energy today?', 'What health practices should I focus on?')
-    }
-    
-    if (content.includes('financial') || content.includes('money') || content.includes('abundance')) {
-      contextualQuestions.push('How can I improve my finances today?', 'What financial opportunities might arise?')
-    }
-    
-    if (content.includes('communication') || content.includes('conversation') || content.includes('express')) {
-      contextualQuestions.push('How can I communicate better today?', 'What important conversations should I have?')
-    }
-    
-    if (content.includes('intuition') || content.includes('spiritual') || content.includes('inner')) {
-      contextualQuestions.push('How can I trust my intuition more?', 'What spiritual practices would benefit me?')
-    }
-    
-    if (content.includes('challenge') || content.includes('obstacle') || content.includes('difficult')) {
-      contextualQuestions.push('How can I overcome today\'s challenges?', 'What obstacles should I prepare for?')
-    }
-    
-    if (content.includes('opportunity') || content.includes('growth') || content.includes('potential')) {
-      contextualQuestions.push('What opportunities should I watch for?', 'How can I maximize my growth today?')
-    }
-    
-    // Add some general horoscope-related questions as backup
-    const generalQuestions = [
-      'What does this mean for my week ahead?',
-      'How do planetary transits affect me today?',
-      'What should I be most mindful of today?',
-      'How can I align with today\'s cosmic energy?',
-      'What does my rising sign add to this reading?',
-      'How can I make the most of today\'s energy?'
-    ]
-    
-    // Combine contextual and general questions
-    const allQuestions = [...contextualQuestions, ...generalQuestions]
-    
-    // Shuffle and return 4-5 questions
-    const shuffled = [...allQuestions].sort(() => 0.5 - Math.random())
-    return shuffled.slice(0, Math.floor(Math.random() * 2) + 4)
-  }
-
-  // Generate preset questions based on chat type
-  const generatePresetQuestions = (userData: User, type: string): string[] => {
-    // For horoscope chat, use context-aware questions based on current horoscope
-    if (type === 'horoscope' && currentHoroscope) {
-      return generateHoroscopeQuestions(currentHoroscope, userData.zodiacSign)
-    }
-    
-    const baseQuestions = {
-      general: [
-        'How can I improve my health?',
-        'Why am I so tired lately?',
-        'What career path is right for me?',
-        'How can I attract more abundance?',
-        'What does my future hold?',
-        'How can I improve my relationships?',
-        'What should I focus on this month?',
-        'How can I boost my confidence?',
-        'What are my hidden talents?',
-        'How can I find inner peace?',
-        'What is blocking my success?',
-        'How can I overcome procrastination?',
-        'What decisions should I make soon?',
-        'How can I improve my intuition?',
-        'What patterns do I need to break?',
-        'How can I attract my soulmate?',
-        'What creative projects should I pursue?',
-        'How can I improve my finances?',
-        'What lessons am I learning now?',
-        'How can I connect with my purpose?'
-      ],
-      horoscope: [
-        'What should I focus on today?',
-        'How will this week affect my love life?',
-        'What challenges should I prepare for?',
-        'What opportunities are coming?',
-        'How can I make the most of this month?',
-        'What does Mercury retrograde mean for me?',
-        'How should I handle upcoming changes?',
-        'What energy should I embrace today?',
-        'How will the new moon affect me?',
-        'What does my rising sign reveal?',
-        'How can I work with lunar cycles?',
-        'What planetary aspects impact me now?',
-        'How should I prepare for Venus retrograde?',
-        'What does Mars energy mean for me?',
-        'How can I use Saturn\'s lessons?',
-        'What does Jupiter expansion bring?'
-      ],
-      compatibility: [
-        'How compatible are we long-term?',
-        'What challenges might we face together?',
-        'What draws us to each other?',
-        'How can we strengthen our bond?',
-        'What should we work on as a couple?',
-        'Are we meant to be together?',
-        'How can we better understand each other?',
-        'What makes our connection special?',
-        'How do our moon signs interact?',
-        'What does our Venus compatibility show?',
-        'How can we handle conflicts better?',
-        'What karmic lessons do we share?',
-        'How do our Mars signs affect passion?',
-        'What does our composite chart reveal?',
-        'How can we support each other\'s growth?',
-        'What makes us magnetically attracted?'
-      ],
-      'friend-compatibility': [
-        'How compatible are we as friends?',
-        'What makes our friendship work?',
-        'How can we support each other better?',
-        'What should we be careful about?',
-        'What do we learn from each other?',
-        'How can we deepen our friendship?',
-        'What makes us good friends?',
-        'How do our energies complement?',
-        'What adventures should we have together?',
-        'How can we communicate better?',
-        'What brings out the best in us?',
-        'How can we navigate differences?',
-        'What makes our bond special?',
-        'How do we inspire each other?'
-      ],
-      'dream-interpreter': [
-        'What does flying in dreams mean?',
-        'Why do I keep having recurring dreams?',
-        'What does water symbolize in dreams?',
-        'Why do I dream about my ex?',
-        'What do nightmares represent?',
-        'How can I have lucid dreams?',
-        'What does it mean to dream about death?',
-        'Why do I dream about falling?',
-        'What do animal dreams symbolize?',
-        'Why do I dream about being chased?',
-        'What does dreaming of fire mean?',
-        'Why do I dream about lost teeth?',
-        'What do pregnancy dreams represent?',
-        'Why do I dream about storms?',
-        'What does dreaming of houses mean?',
-        'Why do I dream about celebrities?'
-      ],
-      'astrological-events': [
-        'How will the next full moon affect me?',
-        'What does Mercury retrograde mean?',
-        'How should I prepare for eclipse season?',
-        'What planetary transits are affecting me?',
-        'How do Saturn returns work?',
-        'What is Venus retrograde about?',
-        'How do lunar phases impact emotions?',
-        'What is Jupiter\'s influence this year?',
-        'How do I work with Pluto transits?',
-        'What does the new moon bring?',
-        'How can I use Mars energy?',
-        'What does Chiron healing represent?',
-        'How do outer planets affect me?',
-        'What is my progressed chart showing?',
-        'How can I prepare for retrogrades?',
-        'What does Neptune\'s influence mean?'
-      ],
-      'tarot-interpreter': [
-        'Pull a card for my love life',
-        'What guidance do I need today?',
-        'Pull a career guidance card',
-        'What should I know about my future?',
-        'Pull a card for my spiritual path',
-        'What energy should I embrace?',
-        'Pull a card for overcoming obstacles',
-        'What does my soul need right now?',
-        'Pull a card for financial guidance',
-        'What message does the universe have?',
-        'Pull a card for healing',
-        'What should I release today?',
-        'Pull a card for new beginnings',
-        'What wisdom do I need to hear?',
-        'Pull a card for my highest good',
-        'What does my intuition want to tell me?'
-      ],
-      'personal-growth': [
-        'How can I build self-confidence?',
-        'What limiting beliefs should I release?',
-        'How can I overcome anxiety?',
-        'What is my life purpose?',
-        'How can I set better boundaries?',
-        'What self-care practices suit me?',
-        'How can I manifest my goals?',
-        'What shadow work should I do?',
-        'How can I heal my inner child?',
-        'What chakras need balancing?',
-        'How can I increase self-love?',
-        'What habits should I cultivate?',
-        'How can I trust my intuition more?',
-        'What fears should I face?',
-        'How can I embrace change?',
-        'What gifts am I not using?',
-        'How can I find my authentic self?',
-        'What patterns need healing?'
-      ],
-      soulmate: [
-        'How can I prepare to meet my soulmate?',
-        'What qualities should I develop?',
-        'What blocks me from finding love?',
-        'How can I raise my vibration?',
-        'What does my ideal partner look like?',
-        'How will I know when I meet them?',
-        'What lessons do I need first?',
-        'How can I become more magnetic?',
-        'What fears around love should I heal?',
-        'How can I trust in divine timing?',
-        'What does my heart truly desire?',
-        'How can I be open to love?',
-        'What past patterns should I release?',
-        'How can I love myself more first?',
-        'What signs will the universe send?',
-        'How can I manifest true love?'
-      ]
-    }
-
-    const questions = baseQuestions[type as keyof typeof baseQuestions] || baseQuestions.general
-    
-    // Shuffle and pick 4-5 random questions for horizontal scrolling
-    const shuffled = [...questions].sort(() => 0.5 - Math.random())
-    return shuffled.slice(0, Math.floor(Math.random() * 2) + 4) // 4-5 questions randomly
   }
 
   const generateDynamicSuggestions = async (userData: User, type: string) => {
@@ -664,16 +315,16 @@ export default function ChatPage() {
       const data = await response.json()
       if (data.success && data.suggestions) {
         setSuggestedResponses(data.suggestions)
-      } else {
-        // Use preset questions as fallback
-        const presetQuestions = generatePresetQuestions(userData, type)
-        setSuggestedResponses(presetQuestions)
       }
     } catch (error) {
       console.error('Error generating suggestions:', error)
-      // Use preset questions as fallback
-      const presetQuestions = generatePresetQuestions(userData, type)
-      setSuggestedResponses(presetQuestions)
+      // Fallback to default suggestions
+      const fallbackSuggestions = [
+        'How does my chart affect my relationships?',
+        'What should I focus on this week?',
+        'How can I improve my communication?'
+      ]
+      setSuggestedResponses(fallbackSuggestions)
     }
   }
 
@@ -706,7 +357,10 @@ export default function ChatPage() {
         }, 100)
       }, typingDuration)
 
-      // Don't generate new questions after assistant responses - only show them initially
+      // Generate new suggestions after assistant response
+      // if (user) {
+      //   await generateDynamicSuggestions(user, chatType)
+      // }
     }
   }
 
@@ -716,11 +370,6 @@ export default function ChatPage() {
     const userMessage = inputValue.trim()
     await addMessage(userMessage, 'user')
     setInputValue('')
-    
-    // Hide suggestions after user sends their first message
-    if (!hasUserSentFirstMessage) {
-      setHasUserSentFirstMessage(true)
-    }
     setSuggestedResponses([])
     setIsLoading(true)
 
@@ -784,10 +433,6 @@ export default function ChatPage() {
     setGenderPreference(gender)
     setCurrentStep('race')
     
-    // Clear suggestions and mark first message as sent since user is interacting
-    setSuggestedResponses([])
-    setHasUserSentFirstMessage(true)
-    
     // Add user's gender selection as a message with proper label
     const genderLabel = gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'All'
     await addMessage(genderLabel, 'user')
@@ -803,10 +448,6 @@ export default function ChatPage() {
       ethnicity: racePreference
     }
     setSoulmatePreferences(preferences)
-    
-    // Ensure suggestions remain cleared and first message is marked
-    setSuggestedResponses([])
-    setHasUserSentFirstMessage(true)
     
     // Add user selection to chat with proper labels
     const raceLabels = racePreference.map(race => {
@@ -873,8 +514,6 @@ export default function ChatPage() {
           'assistant',
           imageUrl
         )
-        
-        // Don't show suggestions after soulmate reveal - maintain consistency
       }, 1500)
       
     } catch (error) {
@@ -894,10 +533,6 @@ export default function ChatPage() {
   const handleSuggestedResponse = async (suggestion: string) => {
     if (isLoading || typingMessageId !== null) return
     
-    // Hide suggestions after user sends their first message (via suggestion)
-    if (!hasUserSentFirstMessage) {
-      setHasUserSentFirstMessage(true)
-    }
     setSuggestedResponses([])
     await addMessage(suggestion, 'user')
     setIsLoading(true)
@@ -1168,38 +803,34 @@ export default function ChatPage() {
         {/* Input Area - Fixed at Bottom with Mobile Optimization */}
         {(currentStep === 'chat' || currentStep === 'result') && (
           <div className="border-t border-gray-800 flex-shrink-0 p-4 bg-black pb-safe z-10 mobile-chat-input-fixed">
-            {/* Preset Questions - Horizontal Scrolling - Only show before user's first message */}
-            {suggestedResponses.length > 0 && !hasUserSentFirstMessage && (
-              <div className="mb-4">
-                <div className="overflow-x-auto scrollbar-hide" style={{ height: '60px', WebkitOverflowScrolling: 'touch' }}>
-                  <div className="flex gap-3 pb-2" style={{ minWidth: 'max-content' }}>
+            {/* Suggested Responses */}
+            {suggestedResponses.length > 0 && (
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-2">
                   {suggestedResponses.map((suggestion, index) => (
                     <motion.button
                       key={index}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.1 }}
                       onClick={() => handleSuggestedResponse(suggestion)}
-                        className="flex-shrink-0 h-12 px-4 py-2 bg-gray-800/80 hover:bg-gray-700/80 border border-gray-600/50 hover:border-gray-500 rounded-2xl text-sm text-gray-300 hover:text-white transition-all duration-300 touch-target backdrop-blur-sm flex items-center justify-center min-w-fit"
-                        disabled={isLoading || typingMessageId !== null}
+                      className="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-purple-500 rounded-full text-sm text-gray-300 hover:text-white transition-all duration-300 touch-target"
+                      disabled={isLoading}
                     >
-                        <span className="whitespace-nowrap">
                       {suggestion}
-                        </span>
                     </motion.button>
                   ))}
-                  </div>
                 </div>
               </div>
             )}
             
-            <div className="relative flex items-center">
+            <div className="relative">
               <textarea
                 ref={textareaRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Ask me anything..."
+                placeholder="Type your message..."
                 className="w-full bg-gray-800 text-white rounded-2xl pl-4 pr-12 py-3 border border-gray-700 placeholder-gray-400 focus:border-gray-500 outline-none text-base resize-none min-h-[44px] max-h-[120px] leading-5"
                 disabled={isLoading}
                 rows={1}
@@ -1214,22 +845,17 @@ export default function ChatPage() {
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isLoading || typingMessageId !== null}
-                className="absolute right-3 w-10 h-10 flex items-center justify-center transition-all duration-200 touch-target hover:scale-110 active:scale-95"
+                className={`absolute right-3 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 touch-target ${
+                  inputValue.trim() && !isLoading && typingMessageId === null
+                    ? 'text-white hover:text-gray-200 hover:bg-gray-700/50'
+                    : 'text-gray-500'
+                }`}
                 style={{ 
                   top: '50%',
-                  transform: 'translateY(-50%)',
-                  minHeight: '40px',
-                  minWidth: '40px'
+                  transform: 'translateY(-50%)'
                 }}
               >
-                <SendButtonIcon 
-                  className="w-6 h-6" 
-                  fill={
-                    inputValue.trim() && !isLoading && typingMessageId === null
-                      ? '#FFFFFF'
-                      : '#6B7280'
-                  }
-                />
+                <ArrowUp className="w-4 h-4" />
               </button>
             </div>
           </div>

@@ -190,11 +190,6 @@ export default function SoulmateGenerationPage() {
       setTimeout(() => {
         setGenerationProgress(100);
         setIsGenerating(false);
-        
-        // Set flag to refresh people list
-        localStorage.setItem('soulmateGenerated', 'true');
-        console.log('Soulmate generation complete - set refresh flag');
-        
         // Navigate to results page after showing completion message
         setTimeout(() => {
           router.push(
